@@ -1,0 +1,41 @@
+name = "NonEmpty"
+version = "0.1.0"
+keywords = ["non-empty datastructures"]
+defaultTargets = ["NonEmpty"]
+leanOptions = { experimental.module = true }
+testDriver = "NonEmptyTest"
+
+[[lean_lib]]
+name = "NonEmpty"
+buildType = "relWithDebInfo"
+
+[[lean_lib]]
+name = "NonEmptyTest"
+globs = ["NonEmptyTest.+"]
+leanOptions = { linter.missingDocs = false }
+
+# [[require]]
+# name = "batteries"
+# scope = "leanprover-community"
+# rev = "main"
+#
+# [[require]]
+# name = "mathlib4"
+# scope = "leanprover-community"
+# rev = "main"
+
+# [[require]]
+# name = "aesop"
+# scope = "leanprover-community"
+# git = "https://github.com/leanprover-community/aesop"
+#
+# [[require]]
+# name = "Canonical"
+# scope = "chasenorman"
+# git = "https://github.com/srghma/CanonicalLean"
+# rev = "fix-v4.23.0-rc2"
+
+# [[require]]
+# name = "Hammer"
+# git = "https://github.com/JOSHCLUNE/LeanHammer"
+# rev = "main"
