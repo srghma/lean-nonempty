@@ -21,13 +21,9 @@ abbrev fromString! (s : String) : NonEmptyString :=
   | none => panic! "Expected non-empty string, got: '{s}'"
 
 abbrev fromNELChar (cs : List Char) (h : cs ≠ []) : NonEmptyString :=
-  ⟨⟨cs⟩, by
-    intro contra
-    apply h
-    rw [String.ext_iff] at contra
-    exact contra⟩
+  ⟨String.ofList cs, by simp_all⟩
 
-abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (String.mk cs)
+abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (String.ofList cs)
 
 abbrev fromLChar! (cs : List Char) : NonEmptyString :=
   match NonEmptyString.fromLChar? cs with

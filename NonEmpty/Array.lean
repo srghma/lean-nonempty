@@ -75,7 +75,7 @@ instance {α : Type u} [ToLevel.{u}] [ToExpr α] : ToExpr (NonEmptyArray α) :=
       let arrayExpr := toExpr xs.toArray
       let proofExpr := mkApp2 (mkConst ``Nat.zero_lt_of_ne_zero)
         (mkNatLit xs.toArray.size)
-        (mkApp (mkConst ``Array.size_pos) arrayExpr)
+        (mkApp (mkConst ``Array.ne_empty_of_size_pos) arrayExpr)
       mkApp3 (mkConst ``NonEmptyArray.mk [level]) type arrayExpr proofExpr,
     toTypeExpr := mkApp (mkConst ``NonEmptyArray [level]) type }
 
