@@ -1,10 +1,11 @@
+module
 import Lean.Elab.Term
 -- import Batteries.Data.Array.Basic
 -- import Hammer
 
 structure NonEmptyArray (α : Type u) where
   toArray : Array α
-  property : toArray.size > 0
+  isNonEmpty : toArray.size > 0
   deriving Hashable, Ord, Repr, DecidableEq
 
 instance [BEq α] : BEq (NonEmptyArray α) where
@@ -27,7 +28,7 @@ abbrev fromArray! [Inhabited α] (xs : Array α) : NonEmptyArray α :=
   | none => panic! "Expected non-empty list"
 
 abbrev head (xs : NonEmptyArray α) : α :=
-  xs.toArray[0]'xs.property
+  xs.toArray[0]'xs.isNonEmpty
 
 abbrev tail (xs : NonEmptyArray α) : Array α :=
   xs.toArray[1:]
@@ -51,12 +52,12 @@ abbrev get? (xs : NonEmptyArray α) (i : Nat) : Option α :=
 
 abbrev map (f : α → β) (xs : NonEmptyArray α) : NonEmptyArray β := ⟨xs.toArray.map f, by
   simp_all only [Array.size_map]
-  exact xs.property
+  exact xs.isNonEmpty
 ⟩
 
 abbrev append (nel1 : NonEmptyArray α) (nel2 : NonEmptyArray α) : NonEmptyArray α := ⟨nel1.toArray ++ nel2.toArray, by
   simp only [Array.size_append]
-  exact Nat.add_pos_left nel1.property nel2.toArray.size
+  exact Nat.add_pos_left nel1.isNonEmpty nel2.toArray.size
 ⟩
 
 abbrev mapM [Monad m] [Inhabited β] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=

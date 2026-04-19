@@ -1,10 +1,11 @@
+module
 -- import Batteries.Data.List.Basic
 import Lean.Elab.Term
 
 structure NonEmptyList (α : Type u) where
   toList : List α
-  -- property : toList ≠ [] -- if `toList.length > 0` wont it calculate length even if not needed?
-  property : toList.length > 0
+  -- isNonEmpty : toList ≠ [] -- if `toList.length > 0` wont it calculate length even if not needed?
+  isNonEmpty : toList.length > 0
   deriving Hashable, Ord, Repr, DecidableEq
 
 instance [BEq α] : BEq (NonEmptyList α) where
@@ -30,9 +31,9 @@ abbrev fromList! [Inhabited α] (xs : List α) : NonEmptyList α :=
   | none => panic! "Expected non-empty list"
 
 abbrev head (xs : NonEmptyList α) : α :=
-  xs.toList[0]'xs.property
+  xs.toList[0]'xs.isNonEmpty
   -- match h_proof : xs.toList with
-  -- | [] => False.elim (xs.property h_proof)
+  -- | [] => False.elim (xs.isNonEmpty h_proof)
   -- | firstElement :: _ => firstElement
 
 abbrev tail (xs : NonEmptyList α) : List α := xs.toList.tail
@@ -59,13 +60,13 @@ abbrev get (xs : NonEmptyList α) (i : Fin xs.length) : α := xs.toList.get i
 abbrev map {β : Type} (f : α → β) (xs : NonEmptyList α) : NonEmptyList β := ⟨xs.toList.map f, by
   simp only [List.length_map, gt_iff_lt];
   -- simp only [ne_eq, List.map_eq_nil_iff]
-  exact xs.property
+  exact xs.isNonEmpty
   ⟩
 
 abbrev append (nel1 nel2 : NonEmptyList α) : NonEmptyList α := ⟨nel1.toList ++ nel2.toList, by
-  -- simp only [ne_eq, List.append_eq_nil_iff, nel1.property, false_and, not_false_eq_true]
+  -- simp only [ne_eq, List.append_eq_nil_iff, nel1.isNonEmpty, false_and, not_false_eq_true]
   simp_all only [List.length_append, gt_iff_lt]
-  exact Nat.add_pos_left nel1.property nel2.toList.length
+  exact Nat.add_pos_left nel1.isNonEmpty nel2.toList.length
 ⟩
 
 -- needs batteries
@@ -101,7 +102,7 @@ instance {α : Type u} [ToLevel.{u}] [ToExpr α] : ToExpr (NonEmptyList α) :=
   --       let listExpr := mkApp3 (mkConst ``List.cons [level]) type xExpr xsExpr
   --       let proofExpr := mkApp3 (mkConst ``List.cons_ne_nil [level]) type xExpr xsExpr
   --       mkApp3 (mkConst ``NonEmptyList.mk [level]) type listExpr proofExpr
-  --     | [] => False.elim (xs.property h),
+  --     | [] => False.elim (xs.isNonEmpty h),
     toTypeExpr := mkApp (mkConst ``NonEmptyList [level]) type }
 
 -- Macro for creating non-empty list literals

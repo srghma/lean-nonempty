@@ -1,39 +1,41 @@
+module
 import Lean.Elab.Term
 
 structure NonEmptyString where
   toString : String
-  property : toString ≠ ""
+  isNonEmpty : toString ≠ ""
   deriving BEq, Hashable, Ord, Repr, DecidableEq
 
 instance : ToString NonEmptyString where
   toString s := s.toString
 
-instance : Inhabited NonEmptyString where
-  default := ⟨"DEFAULT NonEmptyString", by simp⟩
+-- instance : Nonempty NonEmptyString := Nonempty.intro ⟨"DEFAULT NonEmptyString", by simp⟩
+
+-- instance : Inhabited NonEmptyString where
+--   default := ⟨"DEFAULT NonEmptyString", by simp⟩
 
 namespace NonEmptyString
 
 abbrev fromString? (s : String) : Option NonEmptyString := if h : s ≠ "" then some ⟨s, h⟩ else none
 
-abbrev fromString! (s : String) : NonEmptyString :=
-  match NonEmptyString.fromString? s with
-  | some nes => nes
-  | none => panic! "Expected non-empty string, got: '{s}'"
+-- -- this function is disabled bc panic! doesnt work without Inhabited and I dont want to add Inhabited class
+-- abbrev fromString! (s : String) : NonEmptyString :=
+--   match NonEmptyString.fromString? s with
+--   | some nes => nes
+--   | none => panic! "Expected non-empty string, got: '{s}'"
 
 abbrev fromNELChar (cs : List Char) (h : cs ≠ []) : NonEmptyString :=
   ⟨String.ofList cs, by simp_all⟩
 
 abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (String.ofList cs)
 
-abbrev fromLChar! (cs : List Char) : NonEmptyString :=
-  match NonEmptyString.fromLChar? cs with
-  | some nes => nes
-  | none => panic! "Expected non-empty string, got: '{cs}'"
+-- this function is disabled bc panic! doesnt work without Inhabited and I dont want to add Inhabited class
+-- abbrev fromLChar! (cs : List Char) : NonEmptyString :=
+--   match NonEmptyString.fromLChar? cs with
+--   | some nes => nes
+--   | none => panic! "Expected non-empty string, got: '{cs}'"
 
 end NonEmptyString
-
-instance : ToString NonEmptyString where
-  toString := NonEmptyString.toString
 
 section
 open Lean Meta Elab
@@ -62,15 +64,15 @@ macro "nes!" s:str : term => do
   else
     ``( (NonEmptyString.mk $s (of_decide_eq_true (Eq.refl true)) : NonEmptyString) )
 
-elab "nes_elab!" s:str : term => do
-  let strVal := s.getString
-  match NonEmptyString.fromString? strVal with
-  | some nesVal => return (toExpr nesVal)
-  | none => throwErrorAt s "String literal cannot be empty for nes!"
+-- disabled bc this is just for example
+-- elab "nes_elab!" s:str : term => do
+--   let strVal := s.getString
+--   match NonEmptyString.fromString? strVal with
+--   | some nesVal => return (toExpr nesVal)
+--   | none => throwErrorAt s "String literal cannot be empty for nes!"
 
 end section
 
 example := nes!"world"
-example := nes_elab!"world"
-
-#guard (nes!"hello" = nes_elab!"hello")
+-- example := nes_elab!"world"
+-- #guard (nes!"hello" = nes_elab!"hello")
