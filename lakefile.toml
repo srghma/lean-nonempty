@@ -24,15 +24,15 @@ leanOptions = { linter.missingDocs = false }
 # scope = "leanprover-community"
 # rev = "main"
 
-# [[require]]
-# name = "aesop"
-# scope = "leanprover-community"
-# git = "https://github.com/leanprover-community/aesop"
-#
-# [[require]]
-# name = "Canonical"
-# scope = "chasenorman"
-# git = "https://github.com/srghma/CanonicalLean"
+[[require]]
+name = "aesop"
+scope = "leanprover-community"
+git = "https://github.com/leanprover-community/aesop"
+
+[[require]]
+name = "Canonical"
+scope = "chasenorman"
+git = "https://github.com/chasenorman/CanonicalLean"
 # rev = "fix-v4.23.0-rc2"
 
 # [[require]]
