@@ -2,7 +2,6 @@ name = "NonEmpty"
 version = "0.1.0"
 keywords = ["non-empty datastructures"]
 defaultTargets = ["NonEmpty"]
-leanOptions = { experimental.module = true }
 testDriver = "NonEmptyTest"
 
 [[lean_lib]]
@@ -12,33 +11,32 @@ buildType = "relWithDebInfo"
 [[lean_lib]]
 name = "NonEmptyTest"
 globs = ["NonEmptyTest.+"]
-leanOptions = { linter.missingDocs = false }
 
 # [[require]]
 # name = "mathlib4"
 # scope = "leanprover-community"
 # rev = "main"
 
-[[require]]
-name = "aesop"
-# scope = "leanprover-community"
-# git = "https://github.com/leanprover-community/aesop"
-path = "/home/srghma/projects/aesop"
-
-[[require]]
-name = "Canonical"
-scope = "chasenorman"
-path = "/home/srghma/projects/CanonicalLean"
-# git = "https://github.com/chasenorman/CanonicalLean"
-# rev = "fix-v4.23.0-rc2"
-
-[[require]]
-name = "batteries"
-# scope = "leanprover-community"
-# rev = "main"
-path = "/home/srghma/projects/batteries"
+# [[require]]
+# name = "aesop"
+# # scope = "leanprover-community"
+# # git = "https://github.com/leanprover-community/aesop"
+# path = "/home/srghma/projects/aesop"
 
 # [[require]]
-# name = "Hammer"
-# git = "https://github.com/JOSHCLUNE/LeanHammer"
-# rev = "main"
+# name = "Canonical"
+# scope = "chasenorman"
+# path = "/home/srghma/projects/CanonicalLean"
+# # git = "https://github.com/chasenorman/CanonicalLean"
+# # rev = "fix-v4.23.0-rc2"
+
+# [[require]]
+# name = "batteries"
+# # scope = "leanprover-community"
+# # rev = "main"
+# path = "/home/srghma/projects/batteries"
+
+# # [[require]]
+# # name = "Hammer"
+# # git = "https://github.com/JOSHCLUNE/LeanHammer"
+# # rev = "main"

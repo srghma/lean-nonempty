@@ -1,7 +1,13 @@
 module
+
 import NonEmpty.Array
+import all NonEmpty.Array
 import NonEmpty.List
+import all NonEmpty.List
 import NonEmpty.String
+import all NonEmpty.String
+import NonEmpty.String.Trimmed
+import all NonEmpty.String.Trimmed
 
 /-!
 This file tests the examples shown in `README.md`.
@@ -27,3 +33,12 @@ def ex2 : NonEmptyList String := !["hello", "world"]
 def ex3 : NonEmptyString := nes!"lean"
 
 #guard ex3.toString = "lean"
+
+
+-- === NonEmptyStringTrimmed ===
+def ex4 : NonEmptyStringTrimmed := nest!"  trimmed  "
+
+#guard ex4.toString == "trimmed"
+-- The macro should have already trimmed the string
+#guard ex4.toString.startsWith Char.isWhitespace == false
+#guard ex4.toString.endsWith Char.isWhitespace == false

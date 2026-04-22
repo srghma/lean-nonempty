@@ -1,7 +1,8 @@
 module
-import Lean.Elab.Term
--- import Batteries.Data.Array.Basic
--- import Hammer
+
+public import Lean.Elab.Term
+
+public section
 
 structure NonEmptyArray (α : Type u) where
   toArray : Array α
@@ -67,18 +68,6 @@ end NonEmptyArray
 
 section
 
-open Lean Macro Parser Term Elab Term
-
-instance {α : Type u} [ToLevel.{u}] [ToExpr α] : ToExpr (NonEmptyArray α) :=
-  let type := toTypeExpr α
-  let level := toLevel.{u}
-  { toExpr := fun xs =>
-      let arrayExpr := toExpr xs.toArray
-      let proofExpr := mkApp2 (mkConst ``Nat.zero_lt_of_ne_zero)
-        (mkNatLit xs.toArray.size)
-        (mkApp (mkConst ``Array.ne_empty_of_size_pos) arrayExpr)
-      mkApp3 (mkConst ``NonEmptyArray.mk [level]) type arrayExpr proofExpr,
-    toTypeExpr := mkApp (mkConst ``NonEmptyArray [level]) type }
 
 -- Macro for creating non-empty list literals
 syntax "#![" withoutPosition(term,*,?) "]" : term
@@ -87,7 +76,7 @@ macro_rules
   | `(#![ $elems,* ]) => do
     let terms := elems.getElems
     if terms.isEmpty then
-      Macro.throwError "#! literal must contain at least one element"
+      Lean.Macro.throwError "#! literal must contain at least one element"
     else
       ``(NonEmptyArray.mk #[$elems,*] (by simp))
 

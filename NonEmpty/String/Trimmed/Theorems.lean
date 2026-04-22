@@ -1,13 +1,14 @@
-import Lean
-import Init.Data.String.Lemmas.Pattern.TakeDrop.Pred
-import Init.Omega
-import Init.Data.String.Lemmas.TakeDrop
-import Init.Data.String.Lemmas.Pattern.Pred
-import Aesop
-import Canonical
+module
+
+import all Lean
+import all Init.Data.String.Lemmas.Pattern.TakeDrop.Pred
+import all Init.Omega
+import all Init.Data.String.Lemmas.TakeDrop
+import all Init.Data.String.Lemmas.Pattern.Pred
+import all Init.Data.String.Lemmas.IsEmpty
 
 open String
-
+public section
 theorem Slice.startsWith_dropEndWhile_of_startsWith_false (s : Slice) (p q : Char → Bool) (h : s.startsWith p = false) :
     (s.dropEndWhile q).startsWith p = false := by
   rw [Slice.startsWith_bool_eq_false_iff_get] at h ⊢
@@ -101,12 +102,7 @@ theorem endsWith_false_of_skipSuffix_none {p : Char → Bool} {s : Slice}
 
 theorem copy_toSlice_empty_iff (s : Slice) :
     (s.copy.toSlice.startPos = s.copy.toSlice.endPos) ↔ (s.startPos = s.endPos) := by
-  simp only [Slice.Pos.ext_iff, Slice.startPos, Slice.endPos, Slice.rawEndPos, Pos.Raw.ext_iff,
-    Slice.utf8ByteSize, Pos.Raw.byteDistance, String.toSlice, Slice.copy,
-    String.startPos, String.endPos, String.rawEndPos]
-  rw [show (extract s.startInclusive s.endExclusive).utf8ByteSize =
-    s.endExclusive.offset.byteIdx - s.startInclusive.offset.byteIdx from Slice.utf8ByteSize_copy]
-  simp
+  simp only [Slice.startPos_eq_endPos_iff, String.isEmpty_toSlice, Slice.isEmpty_copy]
 
 theorem copy_toSlice_empty_iff' (s : Slice) :
     (s.copy.toSlice.endPos = s.copy.toSlice.startPos) ↔ (s.endPos = s.startPos) := by
@@ -134,14 +130,13 @@ private theorem Slice.Pos.ofSliceFrom_lt_of_lt {s : Slice} {curr : s.Pos}
 private theorem Slice.Pos.ofSliceTo_lt_of_lt {s : Slice} {curr : s.Pos}
     {a b : (s.sliceTo curr).Pos} (hab : a < b) :
     Slice.Pos.ofSliceTo a < Slice.Pos.ofSliceTo b := by
-  rw [Slice.Pos.lt_iff] at hab ⊢
-  simp only [Slice.Pos.ofSliceTo]
-  exact hab
+  rw [Slice.Pos.ofSliceTo_lt_ofSliceTo_iff]; exact hab
 
 theorem Slice.endsWith_toString {p : Char → Bool} (s : Slice) :
     s.toString.endsWith p = s.endsWith p := by
   change s.copy.toSlice.endsWith p = s.endsWith p
   exact Slice.endsWith_copy
+
 
 /-! ### sliceTo preserves startsWith -/
 
@@ -150,53 +145,35 @@ theorem startsWith_sliceTo {p : Char → Bool} {s : Slice}
     (pos : s.Pos) (h : s.startsWith p = false) :
     (s.sliceTo pos).startsWith p = false := by
   rw [startsWith_charPred] at h ⊢
-  split at h
-  · rename_i h_empty
+  match h_s : s.isEmpty with
+  | true =>
     split
     · rfl
-    · rename_i h_sliceTo_nonempty
-      exfalso; apply h_sliceTo_nonempty
-      apply Slice.Pos.ext
-      simp only [Slice.startPos, Slice.endPos, Slice.rawEndPos, Slice.sliceTo,
-        Slice.utf8ByteSize, Pos.Raw.byteDistance, Pos.Raw.ext_iff]
-      have h_le := pos.isValidForSlice.le_rawEndPos
-      rw [Slice.Pos.ext_iff] at h_empty
-      simp [Slice.startPos, Slice.endPos, Slice.rawEndPos, Pos.Raw.ext_iff,
-        Slice.utf8ByteSize, Pos.Raw.byteDistance] at h_empty
-      simp [Pos.Raw.le_iff, Slice.rawEndPos, Slice.utf8ByteSize, Pos.Raw.byteDistance] at h_le
-      simp [Slice.Pos.str, Pos.Raw.offsetBy]
-      omega
-  · simp_all only [Slice.Pos.get, Slice.startPos, Slice.sliceTo]
-    split <;> rfl
+    · rename_i h_not_empty
+      exfalso; apply h_not_empty
+      rw [Slice.startPos_eq_endPos_iff, Slice.isEmpty_sliceTo]
+      exact Slice.isEmpty_iff_forall_eq.mp h_s pos s.startPos
+  | false =>
+    split
+    · rfl
+    · rename_i h_sub
+      simp only [Slice.Pos.get_eq_get_ofSliceTo, Slice.Pos.ofSliceTo_startPos]
+      simp [Slice.startPos_ne_endPos h_s] at h
+      exact h
 
 /-! ### Helper lemmas for monotonicity of position mappings -/
 
 private theorem ofSliceFrom_strictMono {s : Slice} {pos : s.Pos}
     {a b : (s.sliceFrom pos).Pos} (h : a < b) :
     Slice.Pos.ofSliceFrom a < Slice.Pos.ofSliceFrom b := by
-  have ha : (Slice.Pos.ofSliceFrom a).offset.byteIdx = pos.offset.byteIdx + a.offset.byteIdx := by
-    simp [Slice.Pos.ofSliceFrom, Pos.Raw.offsetBy]
-  have hb : (Slice.Pos.ofSliceFrom b).offset.byteIdx = pos.offset.byteIdx + b.offset.byteIdx := by
-    simp [Slice.Pos.ofSliceFrom, Pos.Raw.offsetBy]
-  rw [Slice.Pos.lt_iff, Pos.Raw.lt_iff, ha, hb]
-  rw [Slice.Pos.lt_iff, Pos.Raw.lt_iff] at h
-  omega
+  rw [Slice.Pos.ofSliceFrom_lt_ofSliceFrom_iff]; exact h
 
 private theorem ofSliceTo_strictMono {s : Slice} {pos : s.Pos}
     {a b : (s.sliceTo pos).Pos} (h : a < b) :
     Slice.Pos.ofSliceTo a < Slice.Pos.ofSliceTo b := by
-  have ha : (Slice.Pos.ofSliceTo a).offset.byteIdx = a.offset.byteIdx := by
-    simp [Slice.Pos.ofSliceTo]
-  have hb : (Slice.Pos.ofSliceTo b).offset.byteIdx = b.offset.byteIdx := by
-    simp [Slice.Pos.ofSliceTo]
-  rw [Slice.Pos.lt_iff, Pos.Raw.lt_iff, ha, hb]
-  rw [Slice.Pos.lt_iff, Pos.Raw.lt_iff] at h
-  exact h
+  rw [Slice.Pos.ofSliceTo_lt_ofSliceTo_iff]; exact h
 
-private theorem Slice_Pos_get_eq_of_offset_eq {s : Slice} {p1 p2 : s.Pos}
-    (h_off : p1.offset = p2.offset) (h1 : p1 ≠ s.endPos) (h2 : p2 ≠ s.endPos) :
-    p1.get h1 = p2.get h2 := by
-  simp [Slice.Pos.get, h_off]
+
 
 /-! ### Convenience theorems for trimAscii -/
 
@@ -224,3 +201,26 @@ theorem trimAscii_toString_endsWith_whitespace_false (s : String) :
     s.trimAscii.toString.endsWith Char.isWhitespace = false := by
   rw [Slice.endsWith_toString]
   exact trimAscii_endsWith_whitespace_false s
+
+/-- `startsWith` for a char predicate on an appended string only depends on the first string if it's non-empty. -/
+theorem startsWith_append_of_nonempty {p : Char → Bool} {s1 s2 : String} (h : s1 ≠ "") :
+    (s1 ++ s2).startsWith p = s1.startsWith p := by
+  rw [startsWith_bool_eq_head?, startsWith_bool_eq_head?, String.toList_append]
+  have : s1.toList ≠ [] := by
+    intro h_nil
+    apply h; exact toList_eq_nil_iff.mp h_nil
+  match h_list : s1.toList with
+  | [] => exfalso; apply this; exact h_list
+  | c :: cs => simp
+
+/-- `endsWith` for a char predicate on an appended string only depends on the second string if it's non-empty. -/
+theorem endsWith_append_of_nonempty {p : Char → Bool} {s1 s2 : String} (h : s2 ≠ "") :
+    (s1 ++ s2).endsWith p = s2.endsWith p := by
+  rw [endsWith_bool_eq_getLast?, endsWith_bool_eq_getLast?, String.toList_append]
+  have : s2.toList ≠ [] := by
+    intro h_nil
+    apply h; exact toList_eq_nil_iff.mp h_nil
+  rw [List.getLast?_append]
+  match h_last : s2.toList.getLast? with
+  | none => exfalso; apply this; exact List.getLast?_eq_none_iff.mp h_last
+  | some c => simp
