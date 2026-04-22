@@ -4,59 +4,59 @@ open String
 
 /-! ### Custom tactics and metaprogramming for accessing private `dropWhile.go` / `dropEndWhile.go` -/
 
--- Tactic to rewrite using the equation definition of the private `dropWhile.go`.
-open Lean Meta Elab Tactic in
-elab "rw_dropWhile_go" : tactic => do
-  let eqName : Name :=
-    Name.mkStr (Name.mkStr (Name.mkStr (Name.mkStr
-      (Name.mkStr (Name.mkNum `_private.Init.Data.String.Slice 0)
-      "String") "Slice") "dropWhile") "go") "eq_def"
-  let goal ← getMainGoal
-  let result ← goal.rewrite (← goal.getType) (mkConst eqName)
-  let newGoalId ← goal.replaceTargetEq result.eNew result.eqProof
-  replaceMainGoal (newGoalId :: result.mvarIds)
+-- -- Tactic to rewrite using the equation definition of the private `dropWhile.go`.
+-- open Lean Meta Elab Tactic in
+-- elab "rw_dropWhile_go" : tactic => do
+--   let eqName : Name :=
+--     Name.mkStr (Name.mkStr (Name.mkStr (Name.mkStr
+--       (Name.mkStr (Name.mkNum `_private.Init.Data.String.Slice 0)
+--       "String") "Slice") "dropWhile") "go") "eq_def"
+--   let goal ← getMainGoal
+--   let result ← goal.rewrite (← goal.getType) (mkConst eqName)
+--   let newGoalId ← goal.replaceTargetEq result.eNew result.eqProof
+--   replaceMainGoal (newGoalId :: result.mvarIds)
 
--- Tactic to rewrite using the equation definition of the private `dropEndWhile.go`.
-open Lean Meta Elab Tactic in
-elab "rw_dropEndWhile_go" : tactic => do
-  let eqName : Name :=
-    Name.mkStr (Name.mkStr (Name.mkStr (Name.mkStr
-      (Name.mkStr (Name.mkNum `_private.Init.Data.String.Slice 0)
-      "String") "Slice") "dropEndWhile") "go") "eq_def"
-  let goal ← getMainGoal
-  let result ← goal.rewrite (← goal.getType) (mkConst eqName)
-  let newGoalId ← goal.replaceTargetEq result.eNew result.eqProof
-  replaceMainGoal (newGoalId :: result.mvarIds)
+-- -- Tactic to rewrite using the equation definition of the private `dropEndWhile.go`.
+-- open Lean Meta Elab Tactic in
+-- elab "rw_dropEndWhile_go" : tactic => do
+--   let eqName : Name :=
+--     Name.mkStr (Name.mkStr (Name.mkStr (Name.mkStr
+--       (Name.mkStr (Name.mkNum `_private.Init.Data.String.Slice 0)
+--       "String") "Slice") "dropEndWhile") "go") "eq_def"
+--   let goal ← getMainGoal
+--   let result ← goal.rewrite (← goal.getType) (mkConst eqName)
+--   let newGoalId ← goal.replaceTargetEq result.eNew result.eqProof
+--   replaceMainGoal (newGoalId :: result.mvarIds)
 
--- Create public aliases for the private `dropWhile.go` and `dropEndWhile.go` functions.
--- These are definitionally equal to the private functions, allowing us to do
--- well-founded induction on them.
-open Lean Meta Elab Command in
-run_cmd do
-  let n0 : Name := Name.mkNum `_private.Init.Data.String.Slice 0
-  let ns : Name := Name.mkStr (Name.mkStr n0 "String") "Slice"
-  -- dropWhile.go
-  let dwGoName : Name := Name.mkStr (Name.mkStr ns "dropWhile") "go"
-  liftTermElabM do
-    addDecl (Declaration.defnDecl {
-      name := `Slice.dropWhile_go
-      levelParams := []
-      type := ← inferType (mkConst dwGoName)
-      value := mkConst dwGoName
-      hints := .regular 0
-      safety := .safe
-    })
-  -- dropEndWhile.go
-  let dewGoName : Name := Name.mkStr (Name.mkStr ns "dropEndWhile") "go"
-  liftTermElabM do
-    addDecl (Declaration.defnDecl {
-      name := `Slice.dropEndWhile_go
-      levelParams := []
-      type := ← inferType (mkConst dewGoName)
-      value := mkConst dewGoName
-      hints := .regular 0
-      safety := .safe
-    })
+-- -- Create public aliases for the private `dropWhile.go` and `dropEndWhile.go` functions.
+-- -- These are definitionally equal to the private functions, allowing us to do
+-- -- well-founded induction on them.
+-- open Lean Meta Elab Command in
+-- run_cmd do
+--   let n0 : Name := Name.mkNum `_private.Init.Data.String.Slice 0
+--   let ns : Name := Name.mkStr (Name.mkStr n0 "String") "Slice"
+--   -- dropWhile.go
+--   let dwGoName : Name := Name.mkStr (Name.mkStr ns "dropWhile") "go"
+--   liftTermElabM do
+--     addDecl (Declaration.defnDecl {
+--       name := `Slice.dropWhile_go
+--       levelParams := []
+--       type := ← inferType (mkConst dwGoName)
+--       value := mkConst dwGoName
+--       hints := .regular 0
+--       safety := .safe
+--     })
+--   -- dropEndWhile.go
+--   let dewGoName : Name := Name.mkStr (Name.mkStr ns "dropEndWhile") "go"
+--   liftTermElabM do
+--     addDecl (Declaration.defnDecl {
+--       name := `Slice.dropEndWhile_go
+--       levelParams := []
+--       type := ← inferType (mkConst dewGoName)
+--       value := mkConst dewGoName
+--       hints := .regular 0
+--       safety := .safe
+--     })
 
 /-! ### Characterization of startsWith/endsWith for Char → Bool predicates -/
 
@@ -445,54 +445,3 @@ theorem trimAscii_toString_endsWith_whitespace_false (s : String) :
     s.trimAscii.toString.endsWith Char.isWhitespace = false := by
   rw [Slice.endsWith_toString]
   exact trimAscii_endsWith_whitespace_false s
-
-/-! ### NonEmptyStringTrimmed -/
-
-structure NonEmptyStringTrimmed where
-  toString : String
-  hasNoWhitespaceAtStart : toString.startsWith Char.isWhitespace = false
-  hasNoWhitespaceAtEnd : toString.endsWith Char.isWhitespace = false
-  isNonEmpty : toString ≠ ""
-  deriving BEq, Hashable, Ord, Repr, DecidableEq
-
-instance : ToString NonEmptyStringTrimmed where
-  toString s := s.toString
-
-namespace NonEmptyStringTrimmed
-
-/-- Trim a string and return it as `NonEmptyStringTrimmed` if it's non-empty.
-
-Uses `trimAscii_toString_startsWith_whitespace_false` and
-`trimAscii_toString_endsWith_whitespace_false` to avoid redundant
-`startsWith`/`endsWith` checks after trimming. -/
-def fromString? (s : String) : Option NonEmptyStringTrimmed :=
-  let t := s.trimAscii.toString
-  if hne : t = "" then
-    none
-  else
-    some ⟨t, trimAscii_toString_startsWith_whitespace_false s,
-             trimAscii_toString_endsWith_whitespace_false s, hne⟩
-
-abbrev fromLChar? (cs : List Char) : Option NonEmptyStringTrimmed := fromString? (String.ofList cs)
-
-end NonEmptyStringTrimmed
-
-/-! ### Macro -/
-
-section
-open Lean Meta Elab
-
-macro "nest!" s:str : term => do
-  let strVal := s.getString.trimAscii.toString
-  if strVal.isEmpty then
-    Macro.throwErrorAt s "String literal cannot be empty after trimming for nest!"
-  else
-    let trimmedLit := Syntax.mkStrLit strVal
-    ``( (NonEmptyStringTrimmed.mk $trimmedLit (by native_decide) (by native_decide) (by decide) : NonEmptyStringTrimmed) )
-
-end section
-
-#guard (nest!"  world  ").toString == "world"
-example : (nest!"  world  ").toString.startsWith Char.isWhitespace = false := (nest!"  world  ").hasNoWhitespaceAtStart
-example : (nest!"  world  ").toString.endsWith Char.isWhitespace = false := (nest!"  world  ").hasNoWhitespaceAtEnd
-example : (nest!"  world  ").toString ≠ "" := (nest!"  world  ").isNonEmpty

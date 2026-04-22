@@ -15,32 +15,30 @@ globs = ["NonEmptyTest.+"]
 leanOptions = { linter.missingDocs = false }
 
 # [[require]]
-# name = "batteries"
-# scope = "leanprover-community"
-# rev = "main"
-#
-# [[require]]
 # name = "mathlib4"
 # scope = "leanprover-community"
 # rev = "main"
 
 [[require]]
 name = "aesop"
-scope = "leanprover-community"
-git = "https://github.com/leanprover-community/aesop"
+# scope = "leanprover-community"
+# git = "https://github.com/leanprover-community/aesop"
+path = "/home/srghma/projects/aesop"
 
-# [[require]]
-# name = "Canonical"
-# scope = "chasenorman"
+[[require]]
+name = "Canonical"
+scope = "chasenorman"
+path = "/home/srghma/projects/CanonicalLean"
 # git = "https://github.com/chasenorman/CanonicalLean"
 # rev = "fix-v4.23.0-rc2"
+
+[[require]]
+name = "batteries"
+# scope = "leanprover-community"
+# rev = "main"
+path = "/home/srghma/projects/batteries"
 
 # [[require]]
 # name = "Hammer"
 # git = "https://github.com/JOSHCLUNE/LeanHammer"
-# rev = "main"
-#
-# [[require]]
-# name = "batteries"
-# scope = "leanprover-community"
 # rev = "main"

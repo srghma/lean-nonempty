@@ -7,6 +7,8 @@ import Init.Data.String.Lemmas.Pattern.TakeDrop.Pred
 import Init.Omega
 import Init.Data.String.Lemmas.TakeDrop
 import Init.Data.String.Lemmas.Pattern.Pred
+import Aesop
+import Canonical
 
 open String Slice
 
@@ -42,10 +44,11 @@ theorem Slice.endsWith_dropWhile_of_endsWith_false (s : Slice) (p q : Char → B
       simp [String.Slice.Pattern.Model.CharPred.matchesAt_iff, Slice.Pattern.Model.CharPred.matchesAt_iff, heq]
     exact hne (Slice.Pos.ext (by simp [Slice.dropWhile_eq_sliceFrom_skipPrefixWhile, h']))
   have : ((s.dropWhile q).endPos.prev hne).get (by simp) = (s.endPos.prev hne').get (by simp) := by
-    rw [Slice.Pos.get, Slice.Pos.get]
+    simp_all only [ne_eq, not_false_eq_true, Slice.Pos.get, Slice.Pos.get, Slice.dropWhile, Slice.sliceFrom, Slice.endPos, Slice.rawEndPos, Slice.Pos.prev, String.Pos.prev, Slice.Pos.offset, String.Pos.offset, Slice.utf8ByteSize_eq, Pos.Raw.byteIdx_offsetBy, Nat.add_sub_cancel', Nat.sub_add_cancel]
+    rw []
     congr 1
-    · simp [Slice.dropWhile, Slice.sliceFrom, Slice.endPos, Slice.rawEndPos, Slice.Pos.prev, String.Pos.prev, Slice.Pos.offset, String.Pos.offset, Slice.utf8ByteSize_eq, Pos.Raw.byteIdx_offsetBy, Nat.add_sub_cancel', Nat.sub_add_cancel]
-      omega
+    · simp_all only [Pos.offset_str, Pos.Raw.byteIdx_offsetBy]
+      canonical
     · rfl
   simp [this]
   exact h hne'
