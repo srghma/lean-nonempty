@@ -107,11 +107,11 @@ macro "nest_trim!" s:str : term => do
 
 macro "nest!" s:str : term => do
   let strVal := s.getString
-  if hEmpty : strVal == "" then
+  if strVal == "" then
     Lean.Macro.throwErrorAt s "String literal cannot be empty"
-  else if hStarts : strVal.startsWith Char.isWhitespace then
+  else if strVal.startsWith Char.isWhitespace then
     Lean.Macro.throwErrorAt s "There are whitespace at start"
-  else if hEnds : strVal.endsWith Char.isWhitespace then
+  else if strVal.endsWith Char.isWhitespace then
     Lean.Macro.throwErrorAt s "There are whitespace at end"
   else
     let strLit := Lean.Syntax.mkStrLit strVal

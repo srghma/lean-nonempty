@@ -1,12 +1,8 @@
 module
 
-import NonEmpty.Array
 import all NonEmpty.Array
-import NonEmpty.List
 import all NonEmpty.List
-import NonEmpty.String
 import all NonEmpty.String
-import NonEmpty.String.Trimmed
 import all NonEmpty.String.Trimmed
 
 /-!
@@ -36,7 +32,7 @@ def ex3 : NonEmptyString := nes!"lean"
 
 
 -- === NonEmptyStringTrimmed ===
-def ex4 : NonEmptyStringTrimmed := nest!"  trimmed  "
+def ex4 : NonEmptyStringTrimmed := nest_trim!"  trimmed  "
 
 #guard ex4.toString == "trimmed"
 -- The macro should have already trimmed the string
