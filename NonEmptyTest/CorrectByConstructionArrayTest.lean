@@ -1,9 +1,11 @@
 import NonEmpty.CorrectByConstruction.Array
 
-def test_non_empty_array_cbc () : IO Unit := do
+open NonEmpty.CorrectByConstruction.Array
+
+def test_non_empty_array_cbc : IO Unit := do
   let a : NonEmptyArray Nat := #![1, 2, 3]
   let b : NonEmptyArray Nat := #![10]
-  
+
   -- Test head and tail
   if a.head != 1 || a.tail != #[2, 3] then
     throw (IO.userError "head/tail failure")
