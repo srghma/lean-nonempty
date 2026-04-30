@@ -1,4 +1,5 @@
 module
+
 import Aesop
 import Init.Data.Array.Lemmas
 
@@ -21,13 +22,39 @@ instance [Inhabited α] : Inhabited (NonEmptyArray α) where
 
 namespace NonEmptyArray
 
-@[simp] def toArray (xs : NonEmptyArray α) : Array α :=
+@[simp] abbrev toArr (xs : NonEmptyArray α) : Array α :=
   #[xs.head] ++ xs.tail
 
-abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=
+@[simp] abbrev size (xs : NonEmptyArray α) : Nat := 1 + xs.tail.size
+
+def get (xs : NonEmptyArray α) (i : Fin xs.size) : α :=
+  match i with
+  | ⟨0,     _⟩ => xs.head
+  | ⟨n + 1, h⟩ =>
+    have : n < xs.tail.size := by
+      -- h is n + 1 < size xs
+      -- size xs is 1 + xs.tail.size
+      simp only [size] at h
+      omega
+    xs.tail[n]'this
+
+instance : GetElem? (NonEmptyArray α) Nat α (fun as i => i < as.size) where
+  getElem  as i h := as.get ⟨i, h⟩
+  getElem? as i   := if h : i < as.size then some (as.get ⟨i, h⟩) else none
+
+instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) where
+
+@[simp] theorem size_toArr (as : NonEmptyArray α) : as.toArr.size = as.size := by
+  simp only [Array.size_append, Array.size_singleton]
+
+@[simp] theorem toArr_getElem (as : NonEmptyArray α) (i : Nat) (h : i < as.size) :
+    as.toArr[i]'(by simp only [size_toArr]; exact h) = as[i] := by
+  simp only [GetElem.getElem, get]; split <;> simp_all [Array.getElem_append_left, Array.getElem_append_right]
+
+@[simp] abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=
   if h : xs.size > 0 then some ⟨xs[0]'h, xs[1:]⟩ else none
 
-abbrev fromArray! [Inhabited α] (xs : Array α) : NonEmptyArray α :=
+@[simp] abbrev fromArray! [Inhabited α] (xs : Array α) : NonEmptyArray α :=
   match NonEmptyArray.fromArray? xs with
   | some xs => xs
   | none => panic! "Expected non-empty array"
@@ -35,29 +62,19 @@ abbrev fromArray! [Inhabited α] (xs : Array α) : NonEmptyArray α :=
 @[simp] abbrev cons (a : α) (xs : NonEmptyArray α) : NonEmptyArray α :=
   ⟨a, #[xs.head] ++ xs.tail⟩
 
-@[simp] abbrev size (xs : NonEmptyArray α) : Nat := 1 + xs.tail.size
-
-def get (xs : NonEmptyArray α) (i : Fin (1 + xs.tail.size)) : α :=
-  match i with
-  | ⟨0,     _⟩ => xs.head
-  | ⟨n + 1, h⟩ => xs.tail[n]' (by omega)
-
-abbrev get? (xs : NonEmptyArray α) (i : Nat) : Option α :=
-  if i == 0 then some xs.head else xs.tail[i - 1]?
 
 @[simp] abbrev map (f : α → β) (xs : NonEmptyArray α) : NonEmptyArray β :=
   ⟨f xs.head, xs.tail.map f⟩
 
 @[simp] def flatten (xs : NonEmptyArray (NonEmptyArray α)) : NonEmptyArray α :=
   let ⟨h, t⟩ := xs
-  ⟨h.head, h.tail ++ (t.map toArray).flatten⟩
+  ⟨h.head, h.tail ++ (t.map toArr).flatten⟩
 
 def foldl {β : Type} (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
   xs.tail.foldl f (f init xs.head)
 
 def mapM [Applicative m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
   (NonEmptyArray.mk · ·) <$> f as.head <*> as.tail.foldl (fun macc x => (·.push ·) <$> macc <*> f x) (pure #[])
-
 
 def mapFinIdxM [Monad m] (as : NonEmptyArray α) (f : (i : Nat) → α → (h : i < as.size) → m β) : m (NonEmptyArray β) :=
   return ⟨← f 0 as.head (by simp [size]; omega),
@@ -160,12 +177,12 @@ def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
   ⟨xs[0]'h, xs.extract 1 xs.size⟩
 
 def reverse (xs : NonEmptyArray α) : NonEmptyArray α :=
-  let arr := xs.toArray.reverse
-  have : arr.size > 0 := by simp [arr, toArray]
+  let arr := xs.toArr.reverse
+  have : arr.size > 0 := by simp [arr]
   fromArray arr this
 
 def append (xs ys : NonEmptyArray α) : NonEmptyArray α :=
-  ⟨xs.head, xs.tail ++ ys.toArray⟩
+  ⟨xs.head, xs.tail ++ ys.toArr⟩
 
 def appendArray (xs : NonEmptyArray α) (ys : Array α) : NonEmptyArray α :=
   ⟨xs.head, xs.tail ++ ys⟩
@@ -175,7 +192,7 @@ def appendList (xs : NonEmptyArray α) (ys : List α) : NonEmptyArray α :=
 
 def insertIdx (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i ≤ xs.size) : NonEmptyArray α :=
   if h0 : i = 0 then
-    ⟨a, xs.toArray⟩
+    ⟨a, xs.toArr⟩
   else
     have : i - 1 ≤ xs.tail.size := by simp [size] at h; omega
     ⟨xs.head, xs.tail.insertIdx (i - 1) a this⟩
@@ -191,7 +208,7 @@ def zipWith (f : α → β → γ) (as : NonEmptyArray α) (bs : NonEmptyArray �
   ⟨f as.head bs.head, as.tail.zipWith f bs.tail⟩
 
 def zipWithAll (f : Option α → Option β → γ) (as : NonEmptyArray α) (bs : NonEmptyArray β) : NonEmptyArray γ :=
-  match fromArray? (as.toArray.zipWithAll f bs.toArray) with
+  match fromArray? (as.toArr.zipWithAll f bs.toArr) with
   | some res => res
   | none => ⟨f (some as.head) (some bs.head), #[]⟩
 
@@ -205,30 +222,30 @@ def zipIdx (xs : NonEmptyArray α) (start := 0) : NonEmptyArray (α × Nat) :=
   ⟨(xs.head, start), xs.tail.zipIdx (start + 1)⟩
 
 def unzip (as : NonEmptyArray (α × β)) : NonEmptyArray α × NonEmptyArray β :=
-  let (a, b) := as.toArray.unzip
+  let (a, b) := as.toArr.unzip
   (match fromArray? a with | some a => a | none => ⟨as.head.1, #[]⟩,
    match fromArray? b with | some b => b | none => ⟨as.head.2, #[]⟩)
 
-def flatMap (f : α → Array β) (xs : NonEmptyArray α) : Array β := xs.toArray.flatMap f
+def flatMap (f : α → Array β) (xs : NonEmptyArray α) : Array β := xs.toArr.flatMap f
 def flatMapNonEmpty (f : α → NonEmptyArray β) (xs : NonEmptyArray α) : NonEmptyArray β := flatten (xs.map f)
 
 def leftpad (n : Nat) (a : α) (xs : NonEmptyArray α) : NonEmptyArray α :=
-  match fromArray? (xs.toArray.leftpad n a) with
+  match fromArray? (xs.toArr.leftpad n a) with
   | some res => res
   | none => xs
 
 def rightpad (n : Nat) (a : α) (xs : NonEmptyArray α) : NonEmptyArray α :=
-  match fromArray? (xs.toArray.rightpad n a) with
+  match fromArray? (xs.toArr.rightpad n a) with
   | some res => res
   | none => xs
 
 -- Functions returning potentially empty Array
-def pop (xs : NonEmptyArray α) : Array α := xs.toArray.pop
-def shrink (xs : NonEmptyArray α) (n : Nat) : Array α := xs.toArray.shrink n
-def take (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArray.take i
-def drop (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArray.drop i
-def filter (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArray.filter p
-def filterMap (f : α → Option β) (xs : NonEmptyArray α) : Array β := xs.toArray.filterMap f
+def pop (xs : NonEmptyArray α) : Array α := xs.toArr.pop
+def shrink (xs : NonEmptyArray α) (n : Nat) : Array α := xs.toArr.shrink n
+def take (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArr.take i
+def drop (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArr.drop i
+def filter (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.filter p
+def filterMap (f : α → Option β) (xs : NonEmptyArray α) : Array β := xs.toArr.filterMap f
 
 def eraseIdx (xs : NonEmptyArray α) (i : Nat) (h : i < xs.size) : Array α :=
   if h0 : i = 0 then
@@ -238,60 +255,60 @@ def eraseIdx (xs : NonEmptyArray α) (i : Nat) (h : i < xs.size) : Array α :=
     #[xs.head] ++ xs.tail.eraseIdx (i - 1) this
 
 def eraseIdxIfInBounds (xs : NonEmptyArray α) (i : Nat) : Array α :=
-  xs.toArray.eraseIdxIfInBounds i
+  xs.toArr.eraseIdxIfInBounds i
 
-def erase [BEq α] (xs : NonEmptyArray α) (a : α) : Array α := xs.toArray.erase a
-def eraseP (xs : NonEmptyArray α) (p : α → Bool) : Array α := xs.toArray.eraseP p
-def takeWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArray.takeWhile p
-def popWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArray.popWhile p
-def reduceOption (xs : NonEmptyArray (Option α)) : Array α := xs.toArray.reduceOption
-def partition (p : α → Bool) (xs : NonEmptyArray α) : Array α × Array α := xs.toArray.partition p
+def erase [BEq α] (xs : NonEmptyArray α) (a : α) : Array α := xs.toArr.erase a
+def eraseP (xs : NonEmptyArray α) (p : α → Bool) : Array α := xs.toArr.eraseP p
+def takeWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.takeWhile p
+def popWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.popWhile p
+def reduceOption (xs : NonEmptyArray (Option α)) : Array α := xs.toArr.reduceOption
+def partition (p : α → Bool) (xs : NonEmptyArray α) : Array α × Array α := xs.toArr.partition p
 
 def getEvenElems (xs : NonEmptyArray α) : NonEmptyArray α :=
-  match fromArray? xs.toArray.getEvenElems with
+  match fromArray? xs.toArr.getEvenElems with
   | some res => res
   | none => ⟨xs.head, #[]⟩
 
 def eraseReps [BEq α] (xs : NonEmptyArray α) : NonEmptyArray α :=
-  match fromArray? xs.toArray.eraseReps with
+  match fromArray? xs.toArr.eraseReps with
   | some res => res
   | none => ⟨xs.head, #[]⟩
 
 -- Queries / Searches
-def foldr {β} (f : α → β → β) (init : β) (xs : NonEmptyArray α) : β := xs.toArray.foldr f init
-def any (xs : NonEmptyArray α) (p : α → Bool) : Bool := xs.toArray.any p
-def all (xs : NonEmptyArray α) (p : α → Bool) : Bool := xs.toArray.all p
-def contains [BEq α] (xs : NonEmptyArray α) (a : α) : Bool := xs.toArray.contains a
-def elem [BEq α] (a : α) (xs : NonEmptyArray α) : Bool := xs.toArray.elem a
-def countP (p : α → Bool) (xs : NonEmptyArray α) : Nat := xs.toArray.countP p
-def count [BEq α] (a : α) (xs : NonEmptyArray α) : Nat := xs.toArray.count a
-def sum [Add α] [Zero α] (xs : NonEmptyArray α) : α := xs.toArray.sum
-def find? (p : α → Bool) (xs : NonEmptyArray α) : Option α := xs.toArray.find? p
-def findSome? {β} (f : α → Option β) (xs : NonEmptyArray α) : Option β := xs.toArray.findSome? f
-def findRev? (p : α → Bool) (xs : NonEmptyArray α) : Option α := xs.toArray.findRev? p
-def findIdx? (p : α → Bool) (xs : NonEmptyArray α) : Option Nat := xs.toArray.findIdx? p
-def findIdx (p : α → Bool) (xs : NonEmptyArray α) : Nat := xs.toArray.findIdx p
+def foldr {β} (f : α → β → β) (init : β) (xs : NonEmptyArray α) : β := xs.toArr.foldr f init
+def any (xs : NonEmptyArray α) (p : α → Bool) : Bool := xs.toArr.any p
+def all (xs : NonEmptyArray α) (p : α → Bool) : Bool := xs.toArr.all p
+def contains [BEq α] (xs : NonEmptyArray α) (a : α) : Bool := xs.toArr.contains a
+def elem [BEq α] (a : α) (xs : NonEmptyArray α) : Bool := xs.toArr.elem a
+def countP (p : α → Bool) (xs : NonEmptyArray α) : Nat := xs.toArr.countP p
+def count [BEq α] (a : α) (xs : NonEmptyArray α) : Nat := xs.toArr.count a
+def sum [Add α] [Zero α] (xs : NonEmptyArray α) : α := xs.toArr.sum
+def find? (p : α → Bool) (xs : NonEmptyArray α) : Option α := xs.toArr.find? p
+def findSome? {β} (f : α → Option β) (xs : NonEmptyArray α) : Option β := xs.toArr.findSome? f
+def findRev? (p : α → Bool) (xs : NonEmptyArray α) : Option α := xs.toArr.findRev? p
+def findIdx? (p : α → Bool) (xs : NonEmptyArray α) : Option Nat := xs.toArr.findIdx? p
+def findIdx (p : α → Bool) (xs : NonEmptyArray α) : Nat := xs.toArr.findIdx p
 def findFinIdx? (p : α → Bool) (xs : NonEmptyArray α) : Option (Fin xs.size) :=
-  xs.toArray.findFinIdx? p |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
+  xs.toArr.findFinIdx? p |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
 def finIdxOf? [BEq α] (xs : NonEmptyArray α) (a : α) : Option (Fin xs.size) :=
-  xs.toArray.finIdxOf? a |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
-def idxOf? [BEq α] (xs : NonEmptyArray α) (a : α) : Option Nat := xs.toArray.idxOf? a
-def idxOf [BEq α] (a : α) (xs : NonEmptyArray α) : Nat := xs.toArray.idxOf a
+  xs.toArr.finIdxOf? a |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
+def idxOf? [BEq α] (xs : NonEmptyArray α) (a : α) : Option Nat := xs.toArr.idxOf? a
+def idxOf [BEq α] (a : α) (xs : NonEmptyArray α) : Nat := xs.toArr.idxOf a
 def getMax (xs : NonEmptyArray α) (lt : α → α → Bool) : α := xs.tail.foldl (fun best a => if lt best a then a else best) xs.head
-def isEqv (xs ys : NonEmptyArray α) (p : α → α → Bool) : Bool := xs.toArray.isEqv ys.toArray p
-def isPrefixOf [BEq α] (xs ys : NonEmptyArray α) : Bool := xs.toArray.isPrefixOf ys.toArray
-def allDiff [BEq α] (xs : NonEmptyArray α) : Bool := xs.toArray.allDiff
+def isEqv (xs ys : NonEmptyArray α) (p : α → α → Bool) : Bool := xs.toArr.isEqv ys.toArr p
+def isPrefixOf [BEq α] (xs ys : NonEmptyArray α) : Bool := xs.toArr.isPrefixOf ys.toArr
+def allDiff [BEq α] (xs : NonEmptyArray α) : Bool := xs.toArr.allDiff
 
 -- Monadic operations
-def forM [Monad m] (xs : NonEmptyArray α) (f : α → m PUnit) : m PUnit := xs.toArray.forM f
-def forRevM [Monad m] (xs : NonEmptyArray α) (f : α → m PUnit) : m PUnit := xs.toArray.forRevM f
-def foldlM [Monad m] {β} (f : β → α → m β) (init : β) (xs : NonEmptyArray α) : m β := xs.toArray.foldlM f init
-def foldrM [Monad m] {β} (f : α → β → m β) (init : β) (xs : NonEmptyArray α) : m β := xs.toArray.foldrM f init
-def anyM [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m Bool := xs.toArray.anyM p
-def allM [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m Bool := xs.toArray.allM p
-def findM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option α) := xs.toArray.findM? p
-def findSomeM? [Monad m] {β} (f : α → m (Option β)) (xs : NonEmptyArray α) : m (Option β) := xs.toArray.findSomeM? f
-def findIdxM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option Nat) := xs.toArray.findIdxM? p
+def forM [Monad m] (xs : NonEmptyArray α) (f : α → m PUnit) : m PUnit := xs.toArr.forM f
+def forRevM [Monad m] (xs : NonEmptyArray α) (f : α → m PUnit) : m PUnit := xs.toArr.forRevM f
+def foldlM [Monad m] {β} (f : β → α → m β) (init : β) (xs : NonEmptyArray α) : m β := xs.toArr.foldlM f init
+def foldrM [Monad m] {β} (f : α → β → m β) (init : β) (xs : NonEmptyArray α) : m β := xs.toArr.foldrM f init
+def anyM [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m Bool := xs.toArr.anyM p
+def allM [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m Bool := xs.toArr.allM p
+def findM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option α) := xs.toArr.findM? p
+def findSomeM? [Monad m] {β} (f : α → m (Option β)) (xs : NonEmptyArray α) : m (Option β) := xs.toArr.findSomeM? f
+def findIdxM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option Nat) := xs.toArr.findIdxM? p
 
 instance : Append (NonEmptyArray α) := ⟨append⟩
 instance : HAppend (NonEmptyArray α) (Array α) (NonEmptyArray α) := ⟨appendArray⟩
@@ -303,16 +320,17 @@ structure Mem (as : NonEmptyArray α) (a : α) : Prop where
 instance : Membership α (NonEmptyArray α) where
   mem := Mem
 
-@[simp] theorem toArray_toList (xs : NonEmptyArray α) : xs.toArray.toList = xs.toList := by
-  simp [toArray]
+@[simp] theorem toArr_toList (xs : NonEmptyArray α) : xs.toArr.toList = xs.toList := by
+  simp only [Array.toList_append]
+  rfl
 
 instance [Monad m] : ForIn m (NonEmptyArray α) α where
-  forIn xs init f := forIn xs.toArray init f
+  forIn xs init f := forIn xs.toArr init f
 
-theorem mem_def {a : α} {as : NonEmptyArray α} : a ∈ as ↔ a ∈ as.toArray := by
+theorem mem_def {a : α} {as : NonEmptyArray α} : a ∈ as ↔ a ∈ as.toArr := by
   constructor
-  · intro ⟨h⟩; rw [Array.mem_def, toArray_toList]; exact h
-  · intro h; rw [Array.mem_def, toArray_toList] at h; exact ⟨h⟩
+  · intro ⟨h⟩; rw [Array.mem_def, toArr_toList]; exact h
+  · intro h; rw [Array.mem_def, toArr_toList] at h; exact ⟨h⟩
 
 theorem mem_head_or_tail {a : α} {as : NonEmptyArray α} : a ∈ as ↔ a = as.head ∨ a ∈ as.tail := by
   constructor
@@ -320,8 +338,8 @@ theorem mem_head_or_tail {a : α} {as : NonEmptyArray α} : a ∈ as ↔ a = as.
   · intro h; exact ⟨List.mem_cons.2 (h.imp id (Array.mem_def.1))⟩
 
 instance [Monad m] : ForIn' m (NonEmptyArray α) α inferInstance where
-  forIn' xs init f := forIn' xs.toArray init (fun a h => f a ⟨by
-    rw [Array.mem_def, toArray_toList] at h
+  forIn' xs init f := forIn' xs.toArr init (fun a h => f a ⟨by
+    rw [Array.mem_def, toArr_toList] at h
     exact h
   ⟩)
 
@@ -345,7 +363,7 @@ namespace NonEmptyArray
 @[simp] theorem map_tail (f : α → β) (xs : NonEmptyArray α) : (Functor.map f xs).tail = xs.tail.map f := rfl
 @[simp] theorem map_head (f : α → β) (xs : NonEmptyArray α) : (Functor.map f xs).head = f xs.head := rfl
 
-/-
+/--
 Helper lemmas
 -/
 @[simp] theorem _root_.Array.flatten_map_singleton (t : Array α) (f : α → β) :
@@ -364,10 +382,10 @@ Helper lemmas
     a ++ (b ++ c).flatten = a ++ b.flatten ++ c.flatten := by
   simp [Array.flatten_append, Array.append_assoc]
 
-@[simp] theorem NonEmptyArray.toArray_flatten (xs : NonEmptyArray (NonEmptyArray α)) :
-    xs.flatten.toArray = (xs.toArray.map toArray).flatten := by
+@[simp] theorem NonEmptyArray.toArr_flatten (xs : NonEmptyArray (NonEmptyArray α)) :
+    xs.flatten.toArr = (xs.toArr.map toArr).flatten := by
   cases xs with | mk h t =>
-  simp [toArray, flatten]
+  simp [flatten]
 
 @[simp] theorem NonEmptyArray.flatten_flatten_eq (xs : NonEmptyArray (NonEmptyArray (NonEmptyArray α))) :
     NonEmptyArray.flatten (NonEmptyArray.flatten xs) =
@@ -376,11 +394,11 @@ Helper lemmas
   simp_all [NonEmptyArray.flatten, Functor.map]
   congr 2
   rw [Array.flatten_flatten]
-  have : (Array.map Array.flatten (Array.map (Array.map toArray ∘ toArray) t)) = Array.map (toArray ∘ flatten) t := by
+  have : (Array.map Array.flatten (Array.map (Array.map toArr ∘ toArr) t)) = Array.map (toArr ∘ flatten) t := by
     simp only [Array.map_map, Function.comp_def]
     congr 1
     funext x
-    exact (toArray_flatten x).symm
+    exact (toArr_flatten x).symm
   rw [this]
 
 -- seq unfolds to flatten of map
@@ -401,14 +419,14 @@ instance : LawfulApplicative NonEmptyArray where
 
   seq_pure f x := by
     cases f with | mk h t =>
-    simp [NonEmptyArray.seq_def, pure, Functor.map, NonEmptyArray.flatten, NonEmptyArray.map, NonEmptyArray.toArray, Function.comp_def]
+    simp [NonEmptyArray.seq_def, pure, Functor.map, NonEmptyArray.flatten, NonEmptyArray.map, Function.comp_def]
 
   seq_assoc x g f := by
     obtain ⟨xh, xt⟩ := x
     obtain ⟨gh, gt⟩ := g
     obtain ⟨fh, ft⟩ := f
     simp [Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.comp_def, NonEmptyArray.toArray, Array.map_map]
+          Function.comp_def, Array.map_map]
     congr 1
     rw [Array.flatten_flatten]
     have : Array.map Array.flatten (Array.map (fun x => #[#[x (gh xh)] ++ Array.map (fun x_1 => x (gh x_1)) xt] ++ Array.map (fun x_1 => #[x (x_1 xh)] ++ Array.map (fun x_2 => x (x_1 x_2)) xt) gt) ft) = Array.map (fun x => #[x (gh xh)] ++ (Array.map (fun x_1 => x (gh x_1)) xt ++ (Array.map (fun x_1 => #[x (x_1 xh)] ++ Array.map (fun x_2 => x (x_1 x_2)) xt) gt).flatten)) ft := by
@@ -422,13 +440,13 @@ instance : LawfulApplicative NonEmptyArray where
     obtain ⟨xh, xt⟩ := x
     obtain ⟨yh, yt⟩ := y
     simp [SeqLeft.seqLeft, Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.const, NonEmptyArray.toArray, Array.map_map, Function.comp_def]
+          Function.const, Array.map_map, Function.comp_def]
 
   seqRight_eq x y := by
     obtain ⟨xh, xt⟩ := x
     obtain ⟨yh, yt⟩ := y
     simp [SeqRight.seqRight, Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.const, id, NonEmptyArray.toArray]
+          Function.const, id]
 
 
 instance : Monad NonEmptyArray where
@@ -437,7 +455,7 @@ instance : Monad NonEmptyArray where
 instance : LawfulMonad NonEmptyArray where
   pure_bind x f := by
     simp_all only [bind, NonEmptyArray.flatten, pure, NonEmptyArray.map_head, Array.map,
-      NonEmptyArray.toArray, NonEmptyArray.map_tail, List.mapM_toArray, List.mapM_nil, Id.run_map,
+      NonEmptyArray.map_tail, List.mapM_toArray, List.mapM_nil, Id.run_map,
       List.idRun_mapM, Array.flatten_toArray, List.map_map]
     rfl
   bind_pure_comp f x := by
@@ -447,7 +465,7 @@ instance : LawfulMonad NonEmptyArray where
   bind_map f x := rfl
   bind_assoc x f g := by
     cases x with | mk xh xt =>
-    simp [Bind.bind, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, NonEmptyArray.toArray, Function.comp_def]
+    simp [Bind.bind, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, Function.comp_def]
     congr 1
     rw [Array.flatten_flatten]
     have : Array.map Array.flatten (Array.map (fun x => #[#[(g (f x).head).head] ++ (g (f x).head).tail] ++ Array.map (fun x => #[(g x).head] ++ (g x).tail) (f x).tail) xt) = Array.map (fun x => #[(g (f x).head).head] ++ ((g (f x).head).tail ++ (Array.map (fun x => #[(g x).head] ++ (g x).tail) (f x).tail).flatten)) xt := by
@@ -470,9 +488,12 @@ example : NonEmptyArray Nat := #![1, 2, 3]
 example : NonEmptyArray String := #!["hello", "world"]
 example : NonEmptyArray Nat := #![10]
 
-#guard (#![1, 2, 3]).head = 1
-#guard (#![1, 2, 3]).tail = #[2, 3]
-#guard (#![1, 2, 3]).size = 3
+#guard #![1, 2, 3].head = 1
+#guard #![1, 2, 3].tail = #[2, 3]
+#guard #![1, 2, 3].size = 3
+#guard #![1, 2, 3][0] = 1
+#guard #![1, 2, 3][1] = 2
+#guard #![1, 2, 3][2] = 3
 
 end
 
