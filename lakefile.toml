@@ -17,11 +17,11 @@ globs = ["NonEmptyTest.+"]
 # scope = "leanprover-community"
 # rev = "main"
 
-# [[require]]
-# name = "aesop"
-# # scope = "leanprover-community"
-# # git = "https://github.com/leanprover-community/aesop"
-# path = "/home/srghma/projects/aesop"
+[[require]]
+name = "aesop"
+# scope = "leanprover-community"
+# git = "https://github.com/leanprover-community/aesop"
+path = "/home/srghma/projects/aesop"
 
 # [[require]]
 # name = "Canonical"
