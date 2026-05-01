@@ -113,6 +113,21 @@ def singleton (a : α) : NonEmptyArray α := ⟨a, #[]⟩
 def ofFn {n : Nat} (f : Fin (n + 1) → α) : NonEmptyArray α :=
   ⟨f ⟨0, by omega⟩, Array.ofFn (fun (i : Fin n) => f ⟨i.val + 1, by omega⟩)⟩
 
+@[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
+  simp [ofFn, size]; omega
+
+@[simp] theorem getElem_ofFn {n : Nat} (f : Fin (n + 1) → α) (i : Nat) (h : i < (ofFn f).size) :
+    (ofFn f)[i] = f ⟨i, by simp [size_ofFn] at h; exact h⟩ := by
+  simp [GetElem.getElem, ofFn, size]
+  unfold NonEmptyArray.get
+  split
+  · next h_eq =>
+    cases h_eq
+    congr
+  · next n' h_eq =>
+    cases h_eq
+    simp [Array.getElem_ofFn]
+
 -- Modifications returning NonEmptyArray
 def push (xs : NonEmptyArray α) (a : α) : NonEmptyArray α :=
   ⟨xs.head, xs.tail.push a⟩
@@ -367,9 +382,7 @@ instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendL
   rfl
 @[simp] theorem toArr_map (f : α → β) (xs : NonEmptyArray α) : (xs.map f).toArr = xs.toArr.map f := by
   simp_all only [toArr, Array.map_append, List.map_toArray, List.map_cons, List.map_nil]
-@[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
-  simp only [size, ofFn, Fin.zero_eta, Array.size_ofFn]
-  omega
+
 @[simp] theorem toArr_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).toArr = Array.ofFn f := by
   simp only [toArr, ofFn, Fin.zero_eta]
   apply Array.ext

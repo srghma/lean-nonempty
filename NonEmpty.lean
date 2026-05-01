@@ -1,7 +1,8 @@
-module
-public import NonEmpty.Array
-public import NonEmpty.CorrectByConstruction.Array
-public import NonEmpty.List
-public import NonEmpty.String
-public import NonEmpty.String.Trimmed
-public import NonEmpty.String.Trimmed.Theorems
+-- module
+-- public import NonEmpty.Array
+-- public import NonEmpty.CorrectByConstruction.Array
+import NonEmpty.CorrectByConstruction.Array
+-- public import NonEmpty.List
+-- public import NonEmpty.String
+-- public import NonEmpty.String.Trimmed
+-- public import NonEmpty.String.Trimmed.Theorems
