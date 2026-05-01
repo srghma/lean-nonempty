@@ -44,12 +44,29 @@ instance : GetElem? (NonEmptyArray α) Nat α (fun as i => i < as.size) where
 
 instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) where
 
+
 @[simp] theorem size_toArr (as : NonEmptyArray α) : as.toArr.size = as.size := by
   simp only [Array.size_append, Array.size_singleton]
 
 @[simp] theorem toArr_getElem (as : NonEmptyArray α) (i : Nat) (h : i < as.size) :
     as.toArr[i]'(by simp only [size_toArr]; exact h) = as[i] := by
   simp only [GetElem.getElem, get]; split <;> simp_all only [Array.getElem_append_left, Array.getElem_append_right, Array.getInternal_eq_getElem, Fin.mk.injEq, List.getElem_cons_zero, List.getElem_toArray, List.length_cons, List.length_nil, List.size_toArray, Nat.add_one_sub_one, Nat.le_add_left, Nat.lt_add_one, Nat.succ_eq_add_one, Nat.zero_add, size, toArr]
+
+@[simp] theorem getElem?_def (as : NonEmptyArray α) (i : Nat) :
+    as[i]? = if h : i < as.size then some as[i] else none := rfl
+
+@[simp] theorem getElem?_eq_toArr_getElem? (as : NonEmptyArray α) (i : Nat) :
+    as[i]? = as.toArr[i]? := by
+  rw [getElem?_def]
+  split
+  · next h =>
+    have h' : i < as.toArr.size := by simp only [toArr, Array.size_append, List.size_toArray,
+      List.length_cons, List.length_nil, Nat.zero_add, h]
+    rw [getElem?_pos as.toArr i h', toArr_getElem]
+  · next h =>
+    have h' : ¬i < as.toArr.size := by simp only [toArr, Array.size_append, List.size_toArray,
+      List.length_cons, List.length_nil, Nat.zero_add, h, not_false_eq_true]
+    rw [getElem?_neg as.toArr i h']
 
 @[simp] abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=
   if h : xs.size > 0 then some ⟨xs[0]'h, xs[1:]⟩ else none
@@ -283,9 +300,12 @@ def zipIdx (xs : NonEmptyArray α) (start := 0) : NonEmptyArray (α × Nat) :=
     (xs.zipIdx start).toArr = xs.toArr.zipIdx start := by
   obtain ⟨head, tail⟩ := xs
   apply Array.ext
-  · simp [zipIdx, toArr]
+  · simp only [toArr, zipIdx, Array.size_append, List.size_toArray, List.length_cons,
+    List.length_nil, Nat.zero_add, Array.size_zipIdx]
   · intro i h1 h2
-    simp [zipIdx, toArr, Array.getElem_zipIdx, Array.getElem_append]
+    simp only [toArr, zipIdx, Array.getElem_append, List.size_toArray, List.length_cons,
+      List.length_nil, Nat.zero_add, Nat.lt_one_iff, List.getElem_toArray, List.getElem_singleton,
+      Array.getElem_zipIdx]
     split <;> simp_all only [toArr, Array.size_append, List.size_toArray, List.length_cons,
       List.length_nil, Nat.zero_add, Array.size_zipIdx, Nat.add_zero, Prod.mk.injEq, true_and]
     · omega
