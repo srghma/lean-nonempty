@@ -495,7 +495,7 @@ Helper lemmas
   simp_all
 
 
-@[simp] theorem Array.append_flatten_assoc (a : Array α) (b : Array (Array α)) (c : Array (Array α)) :
+@[simp] theorem _root_.Array.append_flatten_assoc (a : Array α) (b : Array (Array α)) (c : Array (Array α)) :
     a ++ (b ++ c).flatten = a ++ b.flatten ++ c.flatten := by
   simp only [Array.flatten_append, Array.append_assoc]
 
@@ -521,25 +521,48 @@ Helper lemmas
   rw [this]
 
 -- seq unfolds to flatten of map
-theorem seq_def (f : NonEmptyArray (α → β)) (x : NonEmptyArray α) :
+@[simp] theorem seq_def (f : NonEmptyArray (α → β)) (x : NonEmptyArray α) :
     f <*> x = NonEmptyArray.flatten (Functor.map (fun g => Functor.map g x) f) := rfl
 
 @[simp] theorem map_id (xs : NonEmptyArray α) : (id <$> xs) = xs := LawfulFunctor.id_map xs
 @[simp] theorem map_map (f : α → β) (g : β → γ) (xs : NonEmptyArray α) : (g <$> f <$> xs) = ((g ∘ f) <$> xs) := (LawfulFunctor.comp_map f g xs).symm
 
--- /-- `as.attach` returns a NonEmptyArray where each element is paired with a proof that it is in `as`. -/
--- def attach (as : NonEmptyArray α) : NonEmptyArray { x // x ∈ as } :=
---   ⟨⟨as.head, by simp [Mem, toList]⟩, as.tail.attach.map fun ⟨x, h⟩ => ⟨x, by simp [Mem, toList, h]⟩⟩
+/-- `as.attach` returns a NonEmptyArray where each element is paired with a proof that it is in `as`. -/
+@[simp] def attach (as : NonEmptyArray α) : NonEmptyArray { x // x ∈ as } :=
+  ⟨⟨as.head, by simp only [mem_def, toArr, Array.mem_append, List.mem_toArray, List.mem_cons,
+    List.not_mem_nil, or_false, true_or]⟩, as.tail.attach.map fun ⟨x, h⟩ => ⟨x, by simp only [mem_def,
+      toArr, Array.mem_append, List.mem_toArray, List.mem_cons, List.not_mem_nil, or_false, h,
+      or_true]⟩⟩
 
--- @[simp] theorem toArr_attach (as : NonEmptyArray α) :
---     as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simp [toArr_toList] at h; exact h⟩ := by
---   simp [attach, toArr, Array.attach_append, Array.map_append]
---   congr
---   · simp [Array.attach_singleton]
---   · apply Array.ext
---     · simp
---     · intro i h1 h2
---       simp [Array.getElem_map, Array.getElem_attach]
+@[simp] theorem size_attach (as : NonEmptyArray α) : as.attach.size = as.size := by
+  simp [attach, size, Array.size_attach]
+
+@[simp] theorem getElem_attach (as : NonEmptyArray α) (i : Nat) (h : i < as.attach.size) :
+    as.attach[i] = ⟨as[i]'(by simpa using h), by
+      have h' : i < as.size := by simpa using h
+      rw [mem_def, ← toArr_getElem (h := h')]
+      exact Array.getElem_mem ..⟩ := by
+  apply Subtype.ext
+  cases i with
+  | zero => rfl
+  | succ i =>
+    have h' : i + 1 < as.size := by simpa using h
+    show (as.attach.get ⟨i + 1, h⟩).val = as.get ⟨i + 1, h'⟩
+    unfold NonEmptyArray.get
+    simp [attach, Array.getElem_map, Array.getElem_attach]
+
+@[simp] theorem toArr_attach (as : NonEmptyArray α) :
+    as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simpa [mem_def] using h⟩ := by
+  apply Array.ext
+  · simp [Array.size_attach]
+  · intro i h1 h2
+    apply Subtype.ext
+    simp only [toArr, attach, Array.getElem_append, List.size_toArray, List.length_cons,
+      List.length_nil, Nat.zero_add, Array.getElem_map, Array.getElem_attach]
+    split <;> simp_all only [toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil,
+      Nat.zero_add, size_attach, size, Array.attach_append, List.attach_toArray, List.attachWith_mem_toArray,
+      List.attach_cons, List.attach_nil, List.map_nil, List.map_cons, List.map_toArray, Array.map_append,
+      Array.map_map, Array.size_map, Array.size_attach, List.getElem_toArray, List.getElem_singleton]
 
 end NonEmptyArray
 
