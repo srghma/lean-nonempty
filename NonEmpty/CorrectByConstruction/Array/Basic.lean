@@ -178,17 +178,17 @@ def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
 @[simp] theorem toArr_fromArray (xs : Array α) (h : xs.size > 0) :
   (fromArray xs h).toArr = xs := by
     simp_all only [toArr]
-    grind?
+    aesop?
 
 @[simp] theorem size_fromArray (xs : Array α) (h : xs.size > 0) :
   (fromArray xs h).size = xs.size := by
     simp_all only [size]
-    grind?
+    aesop?
 
 @[simp] theorem getElem_fromArray (xs : Array α) (h : xs.size > 0) (i : Nat) (hi : i < (fromArray xs h).size) :
   (fromArray xs h)[i] = xs[i]'(by simpa using hi) := by
     simp_all only [size]
-    grind?
+    aesop?
 
 def reverse (xs : NonEmptyArray α) : NonEmptyArray α :=
   let arr := xs.toArr.reverse
@@ -340,27 +340,27 @@ instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendL
   simp_all only [toArr, Array.map_append, List.map_toArray, List.map_cons, List.map_nil]
 @[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
   simp_all only [size]
-  grind?
+  aesop?
 @[simp] theorem toArr_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).toArr = Array.ofFn f := by
   simp_all only [toArr]
-  grind?
+  aesop?
 @[simp] theorem size_append (xs ys : NonEmptyArray α) : (xs ++ ys).size = xs.size + ys.size := by
   simp_all only [size]
-  grind?
+  aesop?
 @[simp] theorem toArr_append (xs ys : NonEmptyArray α) : (xs ++ ys).toArr = xs.toArr ++ ys.toArr := by
   simp_all only [toArr, Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
-  grind?
+  aesop?
 @[simp] theorem toArr_set (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i < xs.size) :
   (xs.set i a h).toArr = xs.toArr.set i a (by simp_all only [size, toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]) := by
     simp_all only [toArr]
-    grind?
+    aesop?
 
 @[simp] theorem size_reverse (xs : NonEmptyArray α) : xs.reverse.size = xs.size := by
   simp_all only [size, Nat.add_left_cancel_iff]
-  grind?
+  aesop?
 @[simp] theorem toArr_reverse (xs : NonEmptyArray α) : xs.reverse.toArr = xs.toArr.reverse := by
   simp_all only [toArr, Array.reverse_append, List.reverse_toArray, List.reverse_cons, List.reverse_nil, List.nil_append, Array.append_singleton]
-  grind?
+  aesop?
 
 
 
