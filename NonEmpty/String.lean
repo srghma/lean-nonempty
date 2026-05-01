@@ -1,9 +1,7 @@
 module
 
-public import Lean
-public import Lean.Elab.Term
-
 public section
+namespace NonEmpty.String
 
 structure NonEmptyString where
   toString : String
@@ -18,7 +16,7 @@ namespace NonEmptyString
 abbrev fromString? (s : String) : Option NonEmptyString := if h : s ≠ "" then some ⟨s, h⟩ else none
 
 abbrev fromNELChar (cs : List Char) (h : cs ≠ []) : NonEmptyString :=
-  ⟨String.ofList cs, by simp_all⟩
+  ⟨String.ofList cs, by simp_all only [ne_eq, String.ofList_eq_empty_iff, not_false_eq_true]⟩
 
 abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (String.ofList cs)
 
@@ -33,4 +31,4 @@ macro "nes!" s:str : term => do
 
 #guard (nes!"world").toString == "world"
 
-end
+end NonEmpty.String

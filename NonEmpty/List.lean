@@ -1,8 +1,8 @@
 module
 
-public import Lean.Elab.Term
 
 public section
+namespace NonEmpty.List
 
 structure NonEmptyList (α : Type u) where
   toList : List α
@@ -94,4 +94,4 @@ example : NonEmptyList Nat := ![10]
 #guard ![1, 2, 3].tail = [2, 3] -- Should output [2, 3]
 #guard ![1, 2, 3].length = 3 -- Should output 3
 
-end
+end NonEmpty.List

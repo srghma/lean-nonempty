@@ -1,14 +1,7 @@
 
--- module
+module
 
-import Aesop
-import Init
-import Init.Data.Array.Basic
-import Init.Data.Array.Lemmas
-import Init.Omega
-import Init.Data.List.MapIdx
-import Init.Data.Array.OfFn
-import NonEmpty.CorrectByConstruction.Array.Basic
+import all NonEmpty.CorrectByConstruction.Array.Basic
 
 namespace NonEmpty.CorrectByConstruction.Array
 
@@ -542,24 +535,12 @@ theorem mapIdx_eq_singleton_iff {xs : NonEmptyArray α} {f : Nat → α → β} 
   rw [← toArr_inj, toArr_mapIdx, toArr_singleton, _root_.Array.mapIdx_eq_singleton_iff]
   constructor
   · rintro ⟨a, h1, h2⟩
-    subst h2
-    simp_all only [toArr, Array.append_eq_toArray_iff, List.cons_append, List.nil_append, List.cons.injEq,
-      Array.toList_eq_nil_iff]
-    obtain ⟨left, right⟩ := h1
-    subst left
-    apply Exists.intro
-    · apply And.intro
-      ext : 1
-      on_goal 3 => { rfl
-      }
-      · rfl
-      · ext i hi₁ hi₂ : 1
-        · simp_all only [List.size_toArray, List.length_nil]
-          rfl
-        · simp_all only [List.getElem_toArray]
-          rfl
+    have h_a : xs = NonEmptyArray.singleton a := by
+      rw [← toArr_inj, toArr_singleton]
+      exact h1
+    exact ⟨a, h_a, h2⟩
   · rintro ⟨a, rfl, rfl⟩
-    simp only [toArr, toArr_singleton, Array.mk.injEq, List.cons.injEq, and_true, exists_eq_left']
+    exact ⟨a, rfl, rfl⟩
 
 theorem exists_of_mem_mapIdx {b : β} {xs : NonEmptyArray α} {f : Nat → α → β}
     (h : b ∈ xs.mapIdx f) : ∃ (i : Nat) (h : i < xs.size), f i xs[i] = b := by
@@ -588,22 +569,16 @@ theorem mapIdx_eq_push_iff {xs : NonEmptyArray α} {f : Nat → α → β} {ys :
         List.length_cons, List.length_nil, Nat.zero_add] at this
       omega
     let zs := fromArray zs_arr hzs_size
-    subst hb
     refine ⟨a, zs, ?_, ?_, ?_⟩
     · rw [← toArr_inj, toArr_push, toArr_fromArray, hxs]
     · rw [← toArr_inj, toArr_mapIdx, toArr_fromArray, hmap]
-    · simp only [size, size_fromArray, zs]
+    · subst hb
+      simp_all only [toArr, size, size_fromArray, zs]
   · rintro ⟨a, zs, rfl, rfl, rfl⟩
-    simp only [toArr, toArr_push, Array.push_append, toArr_mapIdx, size]
-    apply Exists.intro
-    · apply Exists.intro
-      · apply And.intro
-        on_goal 2 => apply And.intro
-        on_goal 2 => { rfl
-        }
-        · simp_all only [Array.push_append]
-          rfl
-        · simp_all only [Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]
+    refine ⟨a, zs.toArr, ?_, ?_, ?_⟩
+    · exact toArr_push zs a
+    · exact toArr_mapIdx.symm
+    · rw [size_toArr]
 
 theorem mapIdx_eq_append_iff {xs : NonEmptyArray α} {f : Nat → α → β} {ys zs : NonEmptyArray β} :
     xs.mapIdx f = ys ++ zs ↔
@@ -630,18 +605,11 @@ theorem mapIdx_eq_append_iff {xs : NonEmptyArray α} {f : Nat → α → β} {ys
     · rw [← toArr_inj, toArr_mapIdx, toArr_fromArray, hmap1]
     · rw [← toArr_inj, toArr_mapIdx, toArr_fromArray, size_fromArray, hmap2]
   · rintro ⟨xs', zs', rfl, rfl, rfl⟩
-    simp only [toArr, toArr_append, Array.append_singleton_assoc, Array.push_append,
-      Array.append_assoc, toArr_mapIdx, size]
-    apply Exists.intro
-    · apply Exists.intro
-      · apply And.intro
-        on_goal 2 => {
-          apply And.intro
-          · rfl
-          · simp_all only [Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]
-            rfl
-        }
-        · simp_all only [Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
+    refine ⟨xs'.toArr, zs'.toArr, ?_, ?_, ?_⟩
+    · exact toArr_append xs' zs'
+    · exact toArr_mapIdx.symm
+    · rw [size_toArr]
+      exact toArr_mapIdx.symm
 
 theorem mapIdx_eq_iff {xs : NonEmptyArray α} {f : Nat → α → β} {ys : NonEmptyArray β} :
     xs.mapIdx f = ys ↔ ∀ i : Nat, ys[i]? = (xs[i]?).map (f i) := by

@@ -1,8 +1,5 @@
 module
 
-import Aesop
-import Init.Data.Array.Lemmas
-
 public section
 
 -- why this is needed? for https://github.com/leanprover/lean4/issues/4964#issuecomment-4337841019

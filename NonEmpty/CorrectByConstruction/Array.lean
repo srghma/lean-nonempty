@@ -1,8 +1,5 @@
-import NonEmpty.CorrectByConstruction.Array.Basic
-import NonEmpty.CorrectByConstruction.Array.MapIdx
+module
 
--- module
-
--- prelude
--- public import NonEmpty.CorrectByConstruction.Array.Basic
--- public import NonEmpty.CorrectByConstruction.Array.MapIdx
+prelude
+public import NonEmpty.CorrectByConstruction.Array.Basic
+public import NonEmpty.CorrectByConstruction.Array.MapIdx

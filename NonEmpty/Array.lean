@@ -1,8 +1,7 @@
 module
 
--- public import Lean.Elab.Term
-
 public section
+namespace NonEmpty.Array
 
 structure NonEmptyArray (α : Type u) where
   toArray : Array α
