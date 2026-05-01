@@ -378,17 +378,25 @@ instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendL
       Array.size_ofFn, Fin.zero_eta]
     · congr; omega
 @[simp] theorem size_append (xs ys : NonEmptyArray α) : (xs ++ ys).size = xs.size + ys.size := by
-  simp_all only [size]
-  aesop?
+  show (append xs ys).size = xs.size + ys.size
+  unfold append
+  simp only [size, toArr, Array.append_singleton_assoc, Array.size_append, Array.size_push]
+  omega
 @[simp] theorem toArr_append (xs ys : NonEmptyArray α) : (xs ++ ys).toArr = xs.toArr ++ ys.toArr := by
-  simp only [toArr, Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
+  show (append xs ys).toArr = xs.toArr ++ ys.toArr
+  unfold append
+  show #[xs.head] ++ (xs.tail ++ ys.toArr) = (#[xs.head] ++ xs.tail) ++ ys.toArr
+  rw [Array.append_assoc]
 @[simp] theorem toArr_set (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i < xs.size) :
     (xs.set i a h).toArr = xs.toArr.set i a (by simp only [toArr, Array.size_append,
       List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]; exact h) := by
   unfold set; split
-  · subst i; simp only [toArr, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
-    Nat.lt_add_one, Array.set_append_left, List.set_toArray, List.set_cons_zero]
-  · simp only [toArr]; congr; aesop?
+  · subst i; simp [toArr, Array.set_append_left]
+  · have h' : i < xs.toArr.size := by simp only [toArr, Array.size_append, List.size_toArray,
+    List.length_cons, List.length_nil, Nat.zero_add]; exact h
+    rw [Array.set_append_right h' (by simp only [List.size_toArray, List.length_cons,
+      List.length_nil, Nat.zero_add]; omega)]
+    simp only [toArr, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]
 
 @[simp] theorem size_reverse (xs : NonEmptyArray α) : xs.reverse.size = xs.size := by
   simp only [size, reverse, toArr, Array.reverse_append, List.reverse_toArray, List.reverse_cons,
