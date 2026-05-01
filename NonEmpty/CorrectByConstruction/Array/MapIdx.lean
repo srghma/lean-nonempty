@@ -38,19 +38,23 @@ private theorem mapIdx_tail {xs : NonEmptyArray α} {f : Nat → α → β} :
 
 @[simp] theorem toArr_mapFinIdx {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β} :
     (xs.mapFinIdx f).toArr = xs.toArr.mapFinIdx (fun i a h => f i a (by simpa [size, toArr] using h)) := by
-  simp only [toArr, mapFinIdx_head, mapFinIdx_tail, Array.mapFinIdx_append,
-             Array.mapFinIdx_singleton, Array.size_singleton]
+  simp only [toArr, mapFinIdx_head, mapFinIdx_tail, Array.mapFinIdx_append, Array.mapFinIdx_singleton, Array.size_singleton]
 
-theorem mapFinIdx_induction (xs : NonEmptyArray α) (f : (i : Nat) → α → (h : i < xs.size) → β)
-    (motive : Nat → Prop) (h0 : motive 0)
-    (p : (i : Nat) → β → (h : i < xs.size) → Prop)
+@[simp, grind =] theorem size_mapFinIdx {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β} :
+    (xs.mapFinIdx f).size = xs.size := by
+  simp only [size, mapFinIdx_tail, _root_.Array.size_mapFinIdx]
+
+theorem mapFinIdx_induction {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β}
+    {motive : Nat → Prop} (h0 : motive 0)
+    {p : (i : Nat) → β → (h : i < xs.size) → Prop}
     (hs : ∀ i h, motive i → p i (f i xs[i] h) h ∧ motive (i + 1)) :
     motive xs.size ∧ ∃ eq : (xs.mapFinIdx f).size = xs.size,
       ∀ i h, p i ((xs.mapFinIdx f)[i]) h := by
   have ⟨h_mot, h_eq, h_get⟩ := _root_.Array.mapFinIdx_induction xs.toArr
-    (fun i a h => f i a (by simpa [size, toArr] using h))
-    motive h0
-    (fun i b h => p i b (by simpa [size, toArr] using h))
+    (motive := motive)
+    (h0 := h0)
+    (f := fun i a h => f i a (by simpa [size, toArr] using h))
+    (p := fun i b h => p i b (by simpa [size, toArr] using h))
     (by
       intro i h hm
       simp only [toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil,
@@ -58,24 +62,25 @@ theorem mapFinIdx_induction (xs : NonEmptyArray α) (f : (i : Nat) → α → (h
       have ⟨h_p, h_mot'⟩ := hs i (by omega) hm
       refine ⟨?_, h_mot'⟩
       simp_all only [size, toArr, toArr_getElem])
-  have hsz : (xs.mapFinIdx f).size = xs.size := by
-    simp [size, mapFinIdx_tail, Array.size_mapFinIdx]
+  have hsz : (xs.mapFinIdx f).size = xs.size := size_mapFinIdx
   refine ⟨by simpa [size_toArr] using h_mot, hsz, ?_⟩
   intro i h
   have hg := h_get i (by simpa [size_toArr] using h)
-  simp only [← toArr_mapFinIdx] at hg
-  simp_all only [size, toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add, Array.getElem_mapFinIdx, toArr_getElem, toArr_mapFinIdx, true_and, implies_true]
-  aesop?
+  rw [← toArr_getElem (as := xs.mapFinIdx f) i (by rw [hsz]; simpa [size_toArr] using h)]
+  simp_all only [size, toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add, _root_.Array.getElem_mapFinIdx, toArr_getElem, toArr_mapFinIdx]
 
 theorem mapFinIdx_spec {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β}
     {p : (i : Nat) → β → (h : i < xs.size) → Prop} (hs : ∀ i h, p i (f i xs[i] h) h) :
     ∃ eq : (xs.mapFinIdx f).size = xs.size,
       ∀ i h, p i ((xs.mapFinIdx f)[i]) h :=
-  (mapFinIdx_induction _ _ (fun _ => True) trivial p fun _ _ _ => ⟨hs .., trivial⟩).2
-
-@[simp, grind =] theorem size_mapFinIdx {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β} :
-    (xs.mapFinIdx f).size = xs.size :=
-  (mapFinIdx_spec (p := fun _ _ _ => True) (hs := fun _ _ => trivial)).1
+  (mapFinIdx_induction _ (fun _ => by
+    intro h a
+    simp_all only [size]
+    apply And.intro
+    · aesop?
+    · simp_all only [size, implies_true]
+      aesop?)
+  trivial p fun _ _ _ => ⟨hs .., trivial⟩).2
 
 @[simp, grind =] theorem size_zipIdx {xs : NonEmptyArray α} {k : Nat} : (xs.zipIdx k).size = xs.size := by
   simp [zipIdx, size]
@@ -95,10 +100,11 @@ theorem mapFinIdx_spec {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i 
     (xs.mapFinIdx f).toList = xs.toList.mapFinIdx (fun i a h => f i a (by
     simp_all only [toList, List.length_cons, Array.length_toList, size]
     grind only)) := by
-  apply List.ext_getElem <;>
-  simp_all only [toList, List.length_cons, Array.length_toList, List.mapFinIdx_cons, List.length_mapFinIdx,
-    Nat.add_right_cancel_iff]
-  aesop?
+  apply List.ext_getElem
+  · unfold size toList mapFinIdx; simp only [_root_.Array.toList_mapFinIdx, Array.length_toList,
+    List.length_cons, List.length_mapFinIdx, List.mapFinIdx_cons]
+  · intro i h1 h2
+    simp [toList, mapFinIdx]
 
 /-! ### mapIdx -/
 
@@ -108,7 +114,7 @@ theorem mapIdx_induction {f : Nat → α → β} {xs : NonEmptyArray α}
     (hs : ∀ i h, motive i → p i (f i xs[i]) h ∧ motive (i + 1)) :
     motive xs.size ∧ ∃ eq : (xs.mapIdx f).size = xs.size,
       ∀ i h, p i ((xs.mapIdx f)[i]) h :=
-  mapFinIdx_induction xs (fun i a _ => f i a) motive h0 p hs
+  mapFinIdx_induction (f := fun i a _ => f i a) (h0 := h0) (p := p) (hs := hs)
 
 theorem mapIdx_spec {f : Nat → α → β} {xs : NonEmptyArray α}
     {p : (i : Nat) → β → (h : i < xs.size) → Prop} (hs : ∀ i h, p i (f i xs[i]) h) :

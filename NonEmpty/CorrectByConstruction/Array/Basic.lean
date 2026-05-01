@@ -514,6 +514,20 @@ theorem seq_def (f : NonEmptyArray (α → β)) (x : NonEmptyArray α) :
 @[simp] theorem map_id (xs : NonEmptyArray α) : (id <$> xs) = xs := LawfulFunctor.id_map xs
 @[simp] theorem map_map (f : α → β) (g : β → γ) (xs : NonEmptyArray α) : (g <$> f <$> xs) = ((g ∘ f) <$> xs) := (LawfulFunctor.comp_map f g xs).symm
 
+-- /-- `as.attach` returns a NonEmptyArray where each element is paired with a proof that it is in `as`. -/
+-- def attach (as : NonEmptyArray α) : NonEmptyArray { x // x ∈ as } :=
+--   ⟨⟨as.head, by simp [Mem, toList]⟩, as.tail.attach.map fun ⟨x, h⟩ => ⟨x, by simp [Mem, toList, h]⟩⟩
+
+-- @[simp] theorem toArr_attach (as : NonEmptyArray α) :
+--     as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simp [toArr_toList] at h; exact h⟩ := by
+--   simp [attach, toArr, Array.attach_append, Array.map_append]
+--   congr
+--   · simp [Array.attach_singleton]
+--   · apply Array.ext
+--     · simp
+--     · intro i h1 h2
+--       simp [Array.getElem_map, Array.getElem_attach]
+
 end NonEmptyArray
 
 instance : LawfulApplicative NonEmptyArray where
@@ -592,6 +606,7 @@ instance : LawfulMonad NonEmptyArray where
       funext a
       simp only [Array.flatten_append, Array.flatten_singleton, Array.append_assoc]
     rw [this]
+
 section
 
 -- Macro for creating non-empty list literals
