@@ -49,7 +49,7 @@ instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) whe
 
 @[simp] theorem toArr_getElem (as : NonEmptyArray α) (i : Nat) (h : i < as.size) :
     as.toArr[i]'(by simp only [size_toArr]; exact h) = as[i] := by
-  simp only [GetElem.getElem, get]; split <;> simp_all [Array.getElem_append_left, Array.getElem_append_right]
+  simp only [GetElem.getElem, get]; split <;> simp_all only [Array.getElem_append_left, Array.getElem_append_right, Array.getInternal_eq_getElem, Fin.mk.injEq, List.getElem_cons_zero, List.getElem_toArray, List.length_cons, List.length_nil, List.size_toArray, Nat.add_one_sub_one, Nat.le_add_left, Nat.lt_add_one, Nat.succ_eq_add_one, Nat.zero_add, size, toArr]
 
 @[simp] abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=
   if h : xs.size > 0 then some ⟨xs[0]'h, xs[1:]⟩ else none
@@ -76,8 +76,8 @@ def mapM [Applicative m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmpty
   (NonEmptyArray.mk · ·) <$> f as.head <*> as.tail.foldl (fun macc x => (·.push ·) <$> macc <*> f x) (pure #[])
 
 def mapFinIdxM [Monad m] (as : NonEmptyArray α) (f : (i : Nat) → α → (h : i < as.size) → m β) : m (NonEmptyArray β) :=
-  return ⟨← f 0 as.head (by simp [size]; omega),
-          ← as.tail.mapFinIdxM (fun i a h => f (i + 1) a (by simp [size] at h ⊢; omega))⟩
+  return ⟨← f 0 as.head (by simp only [size]; omega),
+          ← as.tail.mapFinIdxM (fun i a h => f (i + 1) a (by simp only [size] at h ⊢; omega))⟩
 
 def mapIdxM [Monad m] (as : NonEmptyArray α) (f : Nat → α → m β) : m (NonEmptyArray β) :=
   as.mapFinIdxM (fun i a _ => f i a)
@@ -115,7 +115,7 @@ def set (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i < xs.size) : NonEmptyA
   if h0 : i = 0 then
     ⟨a, xs.tail⟩
   else
-    have : i - 1 < xs.tail.size := by simp [size] at h; omega
+    have : i - 1 < xs.tail.size := by simp only [size] at h; omega
     ⟨xs.head, xs.tail.set (i - 1) a this⟩
 
 def set! (xs : NonEmptyArray α) (i : Nat) (a : α) : NonEmptyArray α :=
@@ -127,7 +127,7 @@ def modify (xs : NonEmptyArray α) (i : Nat) (f : α → α) : NonEmptyArray α 
   if h : i < xs.size then
     if h0 : i = 0 then ⟨f xs.head, xs.tail⟩
     else
-      have : i - 1 < xs.tail.size := by simp [size] at h; omega
+      have : i - 1 < xs.tail.size := by simp only [size] at h; omega
       ⟨xs.head, xs.tail.modify (i - 1) f⟩
   else xs
 
@@ -135,21 +135,21 @@ def modifyM [Monad m] (xs : NonEmptyArray α) (i : Nat) (f : α → m α) : m (N
   if h : i < xs.size then
     if h0 : i = 0 then return ⟨← f xs.head, xs.tail⟩
     else
-      have : i - 1 < xs.tail.size := by simp [size] at h; omega
+      have : i - 1 < xs.tail.size := by simp only [size] at h; omega
       return ⟨xs.head, ← xs.tail.modifyM (i - 1) f⟩
   else return xs
 
 def swap (xs : NonEmptyArray α) (i j : Nat) (hi : i < xs.size) (hj : j < xs.size) : NonEmptyArray α :=
   if h0 : i = 0 ∧ j = 0 then xs
   else if h1 : i = 0 then
-    let j' := j - 1; have : j' < xs.tail.size := by simp [size] at hj; omega
+    let j' := j - 1; have : j' < xs.tail.size := by simp only [size] at hj; omega
     ⟨xs.tail[j'], xs.tail.set j' xs.head this⟩
   else if h2 : j = 0 then
-    let i' := i - 1; have : i' < xs.tail.size := by simp [size] at hi; omega
+    let i' := i - 1; have : i' < xs.tail.size := by simp only [size] at hi; omega
     ⟨xs.tail[i'], xs.tail.set i' xs.head this⟩
   else
-    let i' := i - 1; have hi' : i' < xs.tail.size := by simp [size] at hi; omega
-    let j' := j - 1; have hj' : j' < xs.tail.size := by simp [size] at hj; omega
+    let i' := i - 1; have hi' : i' < xs.tail.size := by simp only [size] at hi; omega
+    let j' := j - 1; have hj' : j' < xs.tail.size := by simp only [size] at hj; omega
     ⟨xs.head, xs.tail.swap i' j' hi' hj'⟩
 
 def swap! (xs : NonEmptyArray α) (i j : Nat) : NonEmptyArray α :=
@@ -177,22 +177,42 @@ def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
 
 @[simp] theorem toArr_fromArray (xs : Array α) (h : xs.size > 0) :
   (fromArray xs h).toArr = xs := by
-    simp_all only [toArr]
-    aesop?
+  simp only [toArr, fromArray]
+  have : #[xs[0]] = xs.extract 0 1 := by
+    apply Array.ext
+    · simp only [List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
+      Array.size_extract, Nat.sub_zero]; omega
+    · intro i h1 h2
+      have : i = 0 := by simp_all only [List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
+        Nat.lt_one_iff, Array.size_extract, Nat.sub_zero]
+      subst i; simp only [List.getElem_toArray, List.getElem_cons_zero, Array.getElem_extract,
+        Nat.add_zero]
+  rw [this, Array.extract_append_extract]
+  simp only [Nat.zero_le, Nat.min_eq_left, Array.extract_eq_self_iff, Array.size_eq_zero_iff,
+    true_and]
+  omega
 
 @[simp] theorem size_fromArray (xs : Array α) (h : xs.size > 0) :
   (fromArray xs h).size = xs.size := by
-    simp_all only [size]
-    aesop?
+  simp_all only [size, fromArray, Array.size_extract, Std.le_refl, Nat.min_eq_left]
+  omega
 
 @[simp] theorem getElem_fromArray (xs : Array α) (h : xs.size > 0) (i : Nat) (hi : i < (fromArray xs h).size) :
   (fromArray xs h)[i] = xs[i]'(by simpa using hi) := by
-    simp_all only [size]
+  simp_all only [size, fromArray]
+  cases i with
+  | zero => rfl
+  | succ i =>
+    congr
+    simp_all only [size, size_fromArray]
+    simp_all only [gt_iff_lt]
     aesop?
 
 def reverse (xs : NonEmptyArray α) : NonEmptyArray α :=
   let arr := xs.toArr.reverse
-  have : arr.size > 0 := by simp [arr]
+  have : arr.size > 0 := by simp only [Array.reverse_append, List.reverse_toArray,
+    List.reverse_cons, List.reverse_nil, List.nil_append, Array.append_singleton, Array.size_push,
+    Array.size_reverse, gt_iff_lt, Nat.zero_lt_succ, arr]
   fromArray arr this
 
 def append (xs ys : NonEmptyArray α) : NonEmptyArray α :=
@@ -208,7 +228,7 @@ def insertIdx (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i ≤ xs.size) : N
   if h0 : i = 0 then
     ⟨a, xs.toArr⟩
   else
-    have : i - 1 ≤ xs.tail.size := by simp [size] at h; omega
+    have : i - 1 ≤ xs.tail.size := by simp only [size] at h; omega
     ⟨xs.head, xs.tail.insertIdx (i - 1) a this⟩
 
 def insertIdxIfInBounds (xs : NonEmptyArray α) (i : Nat) (a : α) : NonEmptyArray α :=
@@ -266,7 +286,7 @@ def eraseIdx (xs : NonEmptyArray α) (i : Nat) (h : i < xs.size) : Array α :=
   if h0 : i = 0 then
     xs.tail
   else
-    have : i - 1 < xs.tail.size := by simp [size] at h; omega
+    have : i - 1 < xs.tail.size := by simp only [size] at h; omega
     #[xs.head] ++ xs.tail.eraseIdx (i - 1) this
 
 def eraseIdxIfInBounds (xs : NonEmptyArray α) (i : Nat) : Array α :=
@@ -303,9 +323,11 @@ def findRev? (p : α → Bool) (xs : NonEmptyArray α) : Option α := xs.toArr.f
 def findIdx? (p : α → Bool) (xs : NonEmptyArray α) : Option Nat := xs.toArr.findIdx? p
 def findIdx (p : α → Bool) (xs : NonEmptyArray α) : Nat := xs.toArr.findIdx p
 def findFinIdx? (p : α → Bool) (xs : NonEmptyArray α) : Option (Fin xs.size) :=
-  xs.toArr.findFinIdx? p |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
+  xs.toArr.findFinIdx? p |>.map (fun ⟨i, h⟩ => ⟨i, by simp only [toArr, Array.size_append,
+    List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add, size] at h ⊢; omega⟩)
 def finIdxOf? [BEq α] (xs : NonEmptyArray α) (a : α) : Option (Fin xs.size) :=
-  xs.toArr.finIdxOf? a |>.map (fun ⟨i, h⟩ => ⟨i, by simp [size] at h ⊢; omega⟩)
+  xs.toArr.finIdxOf? a |>.map (fun ⟨i, h⟩ => ⟨i, by simp only [toArr, Array.size_append,
+    List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add, size] at h ⊢; omega⟩)
 def idxOf? [BEq α] (xs : NonEmptyArray α) (a : α) : Option Nat := xs.toArr.idxOf? a
 def idxOf [BEq α] (a : α) (xs : NonEmptyArray α) : Nat := xs.toArr.idxOf a
 def getMax (xs : NonEmptyArray α) (lt : α → α → Bool) : α := xs.tail.foldl (fun best a => if lt best a then a else best) xs.head
@@ -339,28 +361,44 @@ instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendL
 @[simp] theorem toArr_map (f : α → β) (xs : NonEmptyArray α) : (xs.map f).toArr = xs.toArr.map f := by
   simp_all only [toArr, Array.map_append, List.map_toArray, List.map_cons, List.map_nil]
 @[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
-  simp_all only [size]
-  aesop?
+  simp only [size, ofFn, Fin.zero_eta, Array.size_ofFn]
+  omega
 @[simp] theorem toArr_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).toArr = Array.ofFn f := by
-  simp_all only [toArr]
-  aesop?
+  simp only [toArr, ofFn, Fin.zero_eta]
+  apply Array.ext
+  · simp only [Array.size_append, List.size_toArray, List.length_cons, List.length_nil,
+    Nat.zero_add, Array.size_ofFn]; omega
+  · intro i h1 h2
+    simp only [Array.getElem_append, List.size_toArray, List.length_cons, List.length_nil,
+      Nat.zero_add, Nat.lt_one_iff, List.getElem_toArray, List.getElem_singleton,
+      Array.getElem_ofFn]
+    split <;> rename_i h_i
+    · subst h_i
+      simp_all only [Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
+      Array.size_ofFn, Fin.zero_eta]
+    · congr; omega
 @[simp] theorem size_append (xs ys : NonEmptyArray α) : (xs ++ ys).size = xs.size + ys.size := by
   simp_all only [size]
   aesop?
 @[simp] theorem toArr_append (xs ys : NonEmptyArray α) : (xs ++ ys).toArr = xs.toArr ++ ys.toArr := by
-  simp_all only [toArr, Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
-  aesop?
+  simp only [toArr, Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
 @[simp] theorem toArr_set (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i < xs.size) :
-  (xs.set i a h).toArr = xs.toArr.set i a (by simp_all only [size, toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]) := by
-    simp_all only [toArr]
-    aesop?
+    (xs.set i a h).toArr = xs.toArr.set i a (by simp only [toArr, Array.size_append,
+      List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]; exact h) := by
+  unfold set; split
+  · subst i; simp only [toArr, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
+    Nat.lt_add_one, Array.set_append_left, List.set_toArray, List.set_cons_zero]
+  · simp only [toArr]; congr; aesop?
 
 @[simp] theorem size_reverse (xs : NonEmptyArray α) : xs.reverse.size = xs.size := by
-  simp_all only [size, Nat.add_left_cancel_iff]
-  aesop?
+  simp only [size, reverse, toArr, Array.reverse_append, List.reverse_toArray, List.reverse_cons,
+    List.reverse_nil, List.nil_append, Array.append_singleton, size_fromArray, Array.size_push,
+    Array.size_reverse]
+  omega
+
 @[simp] theorem toArr_reverse (xs : NonEmptyArray α) : xs.reverse.toArr = xs.toArr.reverse := by
-  simp_all only [toArr, Array.reverse_append, List.reverse_toArray, List.reverse_cons, List.reverse_nil, List.nil_append, Array.append_singleton]
-  aesop?
+  simp only [toArr, reverse, Array.reverse_append, List.reverse_toArray, List.reverse_cons,
+    List.reverse_nil, List.nil_append, Array.append_singleton, toArr_fromArray]
 
 
 
@@ -419,10 +457,11 @@ Helper lemmas
 @[simp] theorem _root_.Array.flatten_map_singleton (t : Array α) (f : α → β) :
     (t.map (fun a => #[f a])).flatten = t.map f := by
   have H : (t.map (fun a => #[f a])).flatten.toList = (t.map f).toList := by
-    simp [Array.toList_flatten, Array.toList_map, Function.comp_def]
+    simp only [Array.toList_flatten, Array.toList_map, List.map_map, Function.comp_def]
     induction t.toList with
     | nil => rfl
-    | cons x xs ih => simp [ih]
+    | cons x xs ih => simp only [List.map_cons, List.flatten_cons, ih, List.cons_append,
+      List.nil_append]
   cases h₁ : (t.map (fun a => #[f a])).flatten with | mk l₁ =>
   cases h₂ : t.map f with | mk l₂ =>
   simp_all
@@ -430,18 +469,20 @@ Helper lemmas
 
 @[simp] theorem Array.append_flatten_assoc (a : Array α) (b : Array (Array α)) (c : Array (Array α)) :
     a ++ (b ++ c).flatten = a ++ b.flatten ++ c.flatten := by
-  simp [Array.flatten_append, Array.append_assoc]
+  simp only [Array.flatten_append, Array.append_assoc]
 
 @[simp] theorem NonEmptyArray.toArr_flatten (xs : NonEmptyArray (NonEmptyArray α)) :
     xs.flatten.toArr = (xs.toArr.map toArr).flatten := by
   cases xs with | mk h t =>
-  simp [flatten]
+  simp only [toArr, flatten, Array.map_append, List.map_toArray, List.map_cons, List.map_nil,
+    Array.flatten_append, Array.flatten_singleton, Array.append_assoc]
 
 @[simp] theorem NonEmptyArray.flatten_flatten_eq (xs : NonEmptyArray (NonEmptyArray (NonEmptyArray α))) :
     NonEmptyArray.flatten (NonEmptyArray.flatten xs) =
     NonEmptyArray.flatten (Functor.map NonEmptyArray.flatten xs) := by
   obtain ⟨⟨hh, ht⟩, t⟩ := xs
-  simp_all [NonEmptyArray.flatten, Functor.map]
+  simp_all only [flatten, Array.map_append, Array.map_flatten, Array.map_map, Array.flatten_append,
+    Functor.map, map, Array.append_assoc, mk.injEq, true_and]
   congr 2
   rw [Array.flatten_flatten]
   have : (Array.map Array.flatten (Array.map (Array.map toArr ∘ toArr) t)) = Array.map (toArr ∘ flatten) t := by
@@ -462,41 +503,49 @@ end NonEmptyArray
 
 instance : LawfulApplicative NonEmptyArray where
   map_pure g x := by
-    ext <;> simp [Functor.map, pure]
+    ext <;> simp only [Functor.map, NonEmptyArray.map, pure, List.map_toArray, List.map_nil,
+      List.size_toArray, List.length_nil]
 
   pure_seq g x := by
-    simp [NonEmptyArray.seq_def, pure, Functor.map, NonEmptyArray.flatten]
+    simp only [pure, NonEmptyArray.seq_def, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map,
+      List.map_toArray, List.map_nil, Array.flatten_empty, Array.append_empty]
 
   seq_pure f x := by
     cases f with | mk h t =>
-    simp [NonEmptyArray.seq_def, pure, Functor.map, NonEmptyArray.flatten, NonEmptyArray.map, Function.comp_def]
+    simp only [pure, NonEmptyArray.seq_def, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map,
+      List.map_toArray, List.map_nil, Array.map_map, Function.comp_def, NonEmptyArray.toArr,
+      Array.append_empty, Array.flatten_map_singleton, Array.empty_append]
 
   seq_assoc x g f := by
     obtain ⟨xh, xt⟩ := x
     obtain ⟨gh, gt⟩ := g
     obtain ⟨fh, ft⟩ := f
-    simp [Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.comp_def, Array.map_map]
+    simp only [Seq.seq, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, Array.map_map,
+      Function.comp_def, NonEmptyArray.toArr, Array.map_append, Array.map_flatten, List.map_toArray,
+      List.map_cons, List.map_nil, Array.append_assoc, Function.comp_apply, Array.flatten_append,
+      NonEmptyArray.mk.injEq, true_and]
     congr 1
     rw [Array.flatten_flatten]
     have : Array.map Array.flatten (Array.map (fun x => #[#[x (gh xh)] ++ Array.map (fun x_1 => x (gh x_1)) xt] ++ Array.map (fun x_1 => #[x (x_1 xh)] ++ Array.map (fun x_2 => x (x_1 x_2)) xt) gt) ft) = Array.map (fun x => #[x (gh xh)] ++ (Array.map (fun x_1 => x (gh x_1)) xt ++ (Array.map (fun x_1 => #[x (x_1 xh)] ++ Array.map (fun x_2 => x (x_1 x_2)) xt) gt).flatten)) ft := by
       simp only [Array.map_map, Function.comp_def]
       congr 1
       funext x
-      simp [Array.flatten_append, Array.append_assoc]
+      simp only [Array.flatten_append, Array.flatten_singleton, Array.append_assoc]
     rw [this]
 
   seqLeft_eq x y := by
     obtain ⟨xh, xt⟩ := x
     obtain ⟨yh, yt⟩ := y
-    simp [SeqLeft.seqLeft, Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.const, Array.map_map, Function.comp_def]
+    simp only [SeqLeft.seqLeft, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map,
+      Function.const, Array.map_const, Array.map_map, Function.comp_def, NonEmptyArray.toArr,
+      Seq.seq]
 
   seqRight_eq x y := by
     obtain ⟨xh, xt⟩ := x
     obtain ⟨yh, yt⟩ := y
-    simp [SeqRight.seqRight, Functor.map, Seq.seq, NonEmptyArray.flatten,
-          Function.const, id]
+    simp only [SeqRight.seqRight, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map,
+      Function.const, Array.map_const, id, Array.map_id_fun, Array.map_replicate,
+      NonEmptyArray.toArr, Seq.seq]
 
 
 instance : Monad NonEmptyArray where
@@ -510,19 +559,23 @@ instance : LawfulMonad NonEmptyArray where
     rfl
   bind_pure_comp f x := by
     cases x with | mk xh xt =>
-    simp [Bind.bind, pure, Functor.map, NonEmptyArray.flatten]
+    simp only [bind, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, pure, Array.map_map,
+      Array.empty_append, NonEmptyArray.mk.injEq, true_and]
     exact _root_.Array.flatten_map_singleton xt f
   bind_map f x := rfl
   bind_assoc x f g := by
     cases x with | mk xh xt =>
-    simp [Bind.bind, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, Function.comp_def]
+    simp only [bind, NonEmptyArray.flatten, Functor.map, NonEmptyArray.map, Array.map_map,
+      Function.comp_def, NonEmptyArray.toArr, Array.map_append, Array.map_flatten, List.map_toArray,
+      List.map_cons, List.map_nil, Array.flatten_append, Array.append_assoc, NonEmptyArray.mk.injEq,
+      true_and]
     congr 1
     rw [Array.flatten_flatten]
     have : Array.map Array.flatten (Array.map (fun x => #[#[(g (f x).head).head] ++ (g (f x).head).tail] ++ Array.map (fun x => #[(g x).head] ++ (g x).tail) (f x).tail) xt) = Array.map (fun x => #[(g (f x).head).head] ++ ((g (f x).head).tail ++ (Array.map (fun x => #[(g x).head] ++ (g x).tail) (f x).tail).flatten)) xt := by
       simp only [Array.map_map, Function.comp_def]
       congr 1
       funext a
-      simp [Array.flatten_append, Array.append_assoc]
+      simp only [Array.flatten_append, Array.flatten_singleton, Array.append_assoc]
     rw [this]
 section
 
