@@ -199,14 +199,15 @@ def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
 
 @[simp] theorem getElem_fromArray (xs : Array α) (h : xs.size > 0) (i : Nat) (hi : i < (fromArray xs h).size) :
   (fromArray xs h)[i] = xs[i]'(by simpa using hi) := by
-  simp_all only [size, fromArray]
   cases i with
   | zero => rfl
   | succ i =>
-    congr
-    simp_all only [size, size_fromArray]
-    simp_all only [gt_iff_lt]
-    aesop?
+    have hi' : i + 1 < xs.size := by simpa using hi
+    have step : (fromArray xs h).get ⟨i + 1, hi⟩ = (xs.extract 1)[i]'(by simp [Array.size_extract]; omega) := rfl
+    have : (fromArray xs h)[i + 1] = (fromArray xs h).get ⟨i + 1, hi⟩ := rfl
+    rw [this, step]
+    rw [Array.getElem_extract]
+    congr 1; omega
 
 def reverse (xs : NonEmptyArray α) : NonEmptyArray α :=
   let arr := xs.toArr.reverse
