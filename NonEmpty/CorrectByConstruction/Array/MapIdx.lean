@@ -96,7 +96,7 @@ theorem mapFinIdx_spec {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i 
 @[simp, grind =] theorem toList_mapFinIdx {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β} :
     (xs.mapFinIdx f).toList = xs.toList.mapFinIdx (fun i a h => f i a (by
     simp_all only [toList, List.length_cons, Array.length_toList, size]
-    aesop?)) := by
+    grind only)) := by
   apply List.ext_getElem <;>
   simp_all only [toList, List.length_cons, Array.length_toList, List.mapFinIdx_cons, List.length_mapFinIdx,
     Nat.add_right_cancel_iff]
@@ -193,8 +193,8 @@ theorem mapFinIdx_eq_ofFn {xs : NonEmptyArray α} {f : (i : Nat) → α → (h :
 @[grind =]
 theorem mapFinIdx_append {xs ys : NonEmptyArray α} {f : (i : Nat) → α → (h : i < (xs ++ ys).size) → β} :
     (xs ++ ys).mapFinIdx f =
-      xs.mapFinIdx (fun i a h => f i a (by simp; aesop?)) ++
-        ys.mapFinIdx (fun i a h => f (i + xs.size) a (by simp; aesop?)) := by
+      xs.mapFinIdx (fun i a h => f i a (by simp; grind only)) ++
+        ys.mapFinIdx (fun i a h => f (i + xs.size) a (by simp; grind only)) := by
   apply toArr_inj.1
   simp [toArr_mapFinIdx, toArr_append, Array.mapFinIdx_append]
 
@@ -243,8 +243,8 @@ theorem mapFinIdx_eq_iff {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : 
 theorem mapFinIdx_eq_append_iff {xs : NonEmptyArray α} {f : (i : Nat) → α → (h : i < xs.size) → β} {ys zs : NonEmptyArray β} :
     xs.mapFinIdx f = ys ++ zs ↔
       ∃ (ys' : NonEmptyArray α) (zs' : NonEmptyArray α) (w : xs = ys' ++ zs'),
-        ys'.mapFinIdx (fun i a h => f i a (by simp [w]; aesop?)) = ys ∧
-        zs'.mapFinIdx (fun i a h => f (i + ys'.size) a (by simp [w]; aesop?)) = zs := by
+        ys'.mapFinIdx (fun i a h => f i a (by simp [w]; grind only)) = ys ∧
+        zs'.mapFinIdx (fun i a h => f (i + ys'.size) a (by simp [w]; grind only)) = zs := by
   ext <;> simp [mapFinIdx, toArr, Array.mapFinIdx_eq_append_iff]
 
 theorem mapFinIdx_eq_push_iff {xs : NonEmptyArray α} {b : β} {f : (i : Nat) → α → (h : i < xs.size) → β} :
