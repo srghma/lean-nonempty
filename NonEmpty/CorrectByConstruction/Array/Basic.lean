@@ -674,6 +674,18 @@ Helper lemmas
     change sizeOf a < sizeOf tl at step
     omega
 
+@[simp] theorem sizeOf_head [SizeOf α] (as : NonEmptyArray α) : sizeOf as.head < sizeOf as := by
+  cases as with
+  | mk hd tl =>
+      change sizeOf hd < 1 + sizeOf hd + sizeOf tl
+      omega
+
+@[simp] theorem sizeOf_tail [SizeOf α] (as : NonEmptyArray α) : sizeOf as.tail < sizeOf as := by
+  cases as with
+  | mk hd tl =>
+      change sizeOf tl < 1 + sizeOf hd + sizeOf tl
+      omega
+
 end NonEmptyArray
 
 instance : LawfulApplicative NonEmptyArray where
