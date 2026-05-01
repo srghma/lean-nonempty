@@ -659,39 +659,245 @@ theorem mapIdx_eq_mapIdx_iff {xs : NonEmptyArray α} {f g : Nat → α → β} :
   apply toArr_inj.1
   simp only [toArr, _root_.Array.mapIdx_set, toArr_set, toArr_mapIdx]
 
--- @[simp, grind =] theorem back?_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} :
---     (mapIdx f xs).back? = (xs.back?).map (f (xs.size - 1)) := by
---   ext <;> simp? [mapIdx, back?, toArr, Array.back?_mapIdx]
+@[simp, grind =] theorem back_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} :
+    (xs.mapIdx f).back = f (xs.size - 1) xs.back := by
+  simp only [← NonEmptyArray.toArr_back, toArr_mapIdx, _root_.Array.back_mapIdx, size_toArr, size]
 
--- @[simp, grind =] theorem back_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} :
---     (xs.mapIdx f).back = f (xs.size - 1) xs.back := by
---   ext <;> simp? [mapIdx, back, toArr, Array.back_mapIdx]
+@[simp, grind =] theorem back?_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} :
+    (xs.mapIdx f).back? = (xs.back?).map (f (xs.size - 1)) := by
+  simp only [back?, back_mapIdx, size, Nat.add_sub_cancel_left, Option.map_some]
 
--- @[simp, grind =] theorem mapIdx_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} {g : Nat → β → γ} :
---     (xs.mapIdx f).mapIdx g = xs.mapIdx (fun i => g i ∘ f i) := by
---   ext <;> try rfl
---   · aesop?
+@[simp, grind =] theorem mapIdx_mapIdx {xs : NonEmptyArray α} {f : Nat → α → β} {g : Nat → β → γ} :
+    (xs.mapIdx f).mapIdx g = xs.mapIdx (fun i a => g i (f i a)) := by
+  apply toArr_inj.1
+  simp only [toArr_mapIdx, _root_.Array.mapIdx_mapIdx, Function.comp_def]
 
--- theorem mapIdx_eq_replicate_iff {xs : NonEmptyArray α} {f : Nat → α → β} {b : β} :
---     mapIdx f xs = NonEmptyArray.ofFn (fun _ => b) ↔ ∀ (i : Nat) (h : i < xs.size), f i xs[i] = b := by
---   ext <;> simp? [mapIdx, toArr, Array.mapIdx_eq_replicate_iff, Array.size]
+theorem mapIdx_eq_replicate_iff {xs : NonEmptyArray α} {f : Nat → α → β} {b : β} :
+    xs.mapIdx f = NonEmptyArray.ofFn (n := xs.tail.size) (fun _ => b) ↔ ∀ (i : Nat) (h : i < xs.size), f i xs[i] = b := by
+  constructor
+  · intro heq i hi
+    have h_eq : (xs.mapIdx f)[i]? = (NonEmptyArray.ofFn (n := xs.tail.size) fun _ => b)[i]? :=
+      congrArg (fun xs => xs[i]?) heq
+    simp only [NonEmptyArray.getElem?_def, size_mapIdx, dif_pos hi,
+        getElem_mapIdx, size_ofFn, getElem_ofFn] at h_eq
+    simp only [size] at hi
+    rw [dif_pos (by omega)] at h_eq
+    exact Option.some.inj h_eq
+  · intro h
+    apply toArr_inj.1
+    rw [toArr_mapIdx, toArr_ofFn]
+    apply _root_.Array.ext
+    · simp only [_root_.Array.size_mapIdx, size_toArr, _root_.Array.size_ofFn, size]; omega
+    · intro i hi₁ hi₂
+      simp only [_root_.Array.getElem_mapIdx, _root_.Array.getElem_ofFn]
+      rw [toArr_getElem]
+      apply h
+      simp only [_root_.Array.size_mapIdx, size_toArr, size] at hi₁; exact hi₁
 
--- @[simp, grind =] theorem mapIdx_reverse {xs : NonEmptyArray α} {f : Nat → α → β} :
---     xs.reverse.mapIdx f = (mapIdx (fun i => f (xs.size - 1 - i)) xs).reverse := by
---   ext <;> simp? [mapIdx, reverse, toArr, Array.mapIdx_reverse, fromArray]
+@[simp, grind =] theorem mapIdx_reverse {xs : NonEmptyArray α} {f : Nat → α → β} :
+    (reverse xs).mapIdx f = reverse (xs.mapIdx (fun i a => f (xs.size - 1 - i) a)) := by
+  apply toArr_inj.1
+  simp only [toArr_mapIdx, toArr_reverse, _root_.Array.mapIdx_reverse, size_toArr]
 
--- theorem toList_mapFinIdxM [Monad m] [LawfulMonad m] {xs : NonEmptyArray α}
---     {f : (i : Nat) → α → (h : i < xs.size) → m β} :
---     toList <$> xs.mapFinIdxM f = xs.toList.mapFinIdxM f := by
---   simp? [mapFinIdxM, toList, Functor.map, pure, bind]
---   congr
---   funext a
---   rw [Array.toList_mapFinIdxM]
+private theorem List_mapFinIdxM_go_eq [Monad m] [LawfulMonad m] :
+    ∀ bs as (f : (i : Nat) → α → i < as.length → m β) acc h1,
+    List.mapFinIdxM.go as f bs acc h1 =
+      (do let res ← List.mapFinIdxM.go bs (fun i a h' => f (i + acc.size) a (by omega)) bs #[] (by simp only [List.size_toArray,
+        List.length_nil, Nat.add_zero])
+          pure (acc.toList ++ res)) := by
+  intro bs
+  induction bs with
+  | nil =>
+    intro as f acc h1
+    simp only [List.mapFinIdxM.go, bind_pure_comp, map_pure, List.append_nil]
+  | cons b bs ih =>
+    intro as f acc h1
+    unfold List.mapFinIdxM.go
+    have s0 : (#[ ] : Array β).size = 0 := rfl
+    simp only [s0, Nat.zero_add]
+    simp only [bind_pure_comp, map_bind]
+    congr 1; funext res
+    have h1' : bs.length + (acc.push res).size = as.length := by
+      simp only [Array.size_push, List.length_cons] at h1 ⊢
+      omega
+    have h2' : bs.length + #[res].size = (b :: bs).length := rfl
+    have eq1 := ih as f (acc.push res) h1'
+    have eq2 := ih (b :: bs) (fun i a h' => f (i + acc.size) a (by omega)) #[res] h2'
+    apply Eq.trans eq1
+    have eq3 : (HAppend.hAppend acc.toList <$> List.mapFinIdxM.go (b :: bs) (fun i a h' => f (i + acc.size) a (by omega)) bs #[res] h2') =
+      (HAppend.hAppend acc.toList <$> do let res_1 ← List.mapFinIdxM.go bs (fun i a h' => f (i + #[res].size + acc.size) a (by omega)) bs #[] (by simp only [List.size_toArray,
+        List.length_nil, Nat.add_zero]); pure (#[res].toList ++ res_1)) := by
+      congr 1
+    apply Eq.symm
+    apply Eq.trans eq3
+    simp only [bind_pure_comp, Functor.map_map, Array.toList_push, List.append_assoc]
+    have s2 : (acc.push res).size = acc.size + 1 := by simp only [Array.size_push]
+    have s3 : #[res].size = 1 := rfl
+    simp only [s2, s3]
+    congr 1
+    congr; funext i a h'
+    have idx_eq : i + 1 + acc.size = i + (acc.size + 1) := by omega
+    simp only [idx_eq]
 
--- theorem toList_mapIdxM [Monad m] [LawfulMonad m] {xs : NonEmptyArray α}
---     {f : Nat → α → m β} :
---     toList <$> xs.mapIdxM f = xs.toList.mapIdxM f := by
---   rw [mapIdxM, toList_mapFinIdxM]
---   simp? [List.mapIdxM]
+private theorem List_mapFinIdxM_cons [Monad m] [LawfulMonad m] {h : α} {t : List α}
+    {f : (i : Nat) → α → i < (h :: t).length → m β} :
+    (h :: t).mapFinIdxM f = (do
+      let b ← f 0 h (by simp only [List.length_cons, Nat.zero_lt_succ])
+      let bs ← t.mapFinIdxM (fun i a h' => f (i + 1) a (by
+        simp only [List.length_cons, Nat.add_lt_add_iff_right]; omega))
+      pure (b :: bs)) := by
+  unfold List.mapFinIdxM
+  unfold List.mapFinIdxM.go
+  simp only [bind_pure_comp]
+  congr; funext res
+  rw [List_mapFinIdxM_go_eq]
+  simp_all only [List.push_toArray, List.nil_append, List.size_toArray, List.length_cons, List.length_nil,
+    Nat.zero_add, List.cons_append, bind_pure_comp, List.cons.injEq, true_and, implies_true,
+    map_inj_right_of_nonempty]
+  split
+  next x x_1 x_2
+    x_3 =>
+    simp_all only [List.length_nil, Nat.add_eq_zero_iff, List.length_eq_zero_iff, Array.size_eq_zero_iff,
+      List.size_toArray, Nat.add_zero]
+    obtain ⟨left, right⟩ := x_2
+    subst left right
+    rfl
+  next x x_1 a as x_2
+    x_3 =>
+    simp_all only [List.length_cons, List.size_toArray, List.length_nil, Nat.zero_add, List.push_toArray,
+      List.nil_append]
+    rfl
+
+private theorem List_mapIdxM_go_eq [Monad m] [LawfulMonad m] :
+    ∀ bs (f : Nat → α → m β) acc,
+    List.mapIdxM.go f bs acc =
+      (do let res ← List.mapIdxM.go (fun i a => f (i + acc.size) a) bs #[]
+          pure (acc.toList ++ res)) := by
+  intro bs
+  induction bs with
+  | nil =>
+    intro f acc
+    simp only [List.mapIdxM.go, bind_pure_comp, map_pure, List.append_nil]
+  | cons b bs ih =>
+    intro f acc
+    unfold List.mapIdxM.go
+    have s0 : (#[ ] : Array β).size = 0 := rfl
+    simp only [s0, Nat.zero_add]
+    simp only [map_bind, bind_pure_comp]
+    congr 1; funext res
+    have : #[].push res = #[res] := rfl
+    rw [this]
+    rw [ih f (acc.push res)]
+    rw [ih (fun i a => f (i + acc.size) a) #[res]]
+    simp only [bind_pure_comp, Functor.map_map, Array.toList_push, List.append_assoc]
+    have s2 : (acc.push res).size = acc.size + 1 := by simp only [Array.size_push]
+    have s3 : #[res].size = 1 := rfl
+    simp only [s2, s3]
+    congr 1
+    congr; funext i a
+    have idx_eq : i + (acc.size + 1) = i + 1 + acc.size := by omega
+    simp only [idx_eq]
+
+private theorem List_mapIdxM_cons [Monad m] [LawfulMonad m] (h : α) (t : List α) (f : Nat → α → m β) :
+    List.mapIdxM f (h :: t) = (do
+      let b ← f 0 h
+      let bs ← List.mapIdxM (fun i a => f (i + 1) a) t
+      pure (b :: bs)) := by
+  unfold List.mapIdxM
+  unfold List.mapIdxM.go
+  simp only [bind_pure_comp]
+  congr; funext res
+  rw [List_mapIdxM_go_eq]
+  simp_all only [List.push_toArray, List.nil_append, List.size_toArray, List.length_cons, List.length_nil,
+    Nat.zero_add, List.cons_append, bind_pure_comp, List.cons.injEq, true_and, implies_true,
+    map_inj_right_of_nonempty]
+  split
+  next x x_1 =>
+    simp_all only
+    rfl
+  next x x_1 a
+    as =>
+    simp_all only [List.size_toArray, List.length_nil, Nat.zero_add, List.push_toArray, List.nil_append]
+    rfl
+
+theorem toList_mapFinIdxM [Monad m] [LawfulMonad m] {as : NonEmptyArray α}
+    {f : (i : Nat) → α → (h : i < as.size) → m β} :
+    toList <$> as.mapFinIdxM f = as.toList.mapFinIdxM (fun i a h => f i a (by
+      simp_all only [toList, List.length_cons, Array.length_toList, size]
+      omega)) := by
+  obtain ⟨h, t⟩ := as
+  simp only [mapFinIdxM, toList, bind_pure_comp, map_bind, Functor.map_map, List.length_cons, Array.length_toList]
+  rw [List_mapFinIdxM_cons]
+  simp only [bind_pure_comp]
+  congr; funext b
+  have eq_lhs : (fun as' : Array β => b :: as'.toList) = (List.cons b ∘ Array.toList) := by funext as'; rfl
+  rw [eq_lhs]
+  rw [Function.comp_def, ← Functor.map_map, _root_.Array.toList_mapFinIdxM]
+  rfl
+
+@[simp] theorem List.mapFinIdxM_eq_of_same_list [Monad m] [LawfulMonad m]
+    {l : List α} {f g : (i : Nat) → α → i < l.length → m β}
+    (h : ∀ i a hi, f i a hi = g i a hi) : l.mapFinIdxM f = l.mapFinIdxM g := by
+  congr 1; funext i a hi; exact h i a hi
+
+set_option pp.proofs true
+
+private theorem List.mapFinIdxM_congr_lists [Monad m] {l1 l2 : List α} (hl : l1 = l2)
+    (f : (i : Nat) → α → i < l1.length → m β)
+    (g : (i : Nat) → α → i < l2.length → m β)
+    (hfg : ∀ i a (h1 : i < l1.length) (h2 : i < l2.length), f i a h1 = g i a h2) :
+    l1.mapFinIdxM f = l2.mapFinIdxM g := by
+  subst hl
+  have eq : f = g := by funext i a h; exact hfg i a h h
+  rw [eq]
+
+@[simp] theorem toArr_mapFinIdxM [Monad m] [LawfulMonad m] {as : NonEmptyArray α}
+    {f : (i : Nat) → α → (h : i < as.size) → m β} :
+    toArr <$> as.mapFinIdxM f = as.toArr.mapFinIdxM (fun i a h => f i a (by simpa only [size, toArr,
+      Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add] using h)) := by
+  have h_inj {X Y : m (Array β)} (h : Array.toList <$> X = Array.toList <$> Y) : X = Y := by
+    have h2 : List.toArray <$> (Array.toList <$> X) = List.toArray <$> (Array.toList <$> Y) := by rw [h]
+    simp only [Functor.map_map, Array.toArray_toList] at h2
+    simp_all only [Array.toList_inj, implies_true, map_inj_right_of_nonempty, id_map']
+
+  apply h_inj
+
+  have lhs_eq : Array.toList <$> (toArr <$> as.mapFinIdxM f) = toList <$> as.mapFinIdxM f := by
+    rw [Functor.map_map]
+    simp_all only [Array.toList_inj, implies_true, map_inj_right_of_nonempty, toArr, Array.toList_append,
+      List.cons_append, List.nil_append]
+    rfl
+
+  rw [lhs_eq, toList_mapFinIdxM, _root_.Array.toList_mapFinIdxM]
+
+  -- Use `simp only` to safely rewrite the RHS list to match the LHS list (`as.toList`)
+  -- This safely handles the dependent types without failing motives.
+  apply List.mapFinIdxM_congr_lists (toArr_toList as).symm
+  intro i a h1 h2
+
+  rfl
+
+@[simp] theorem toArr_mapIdxM [Monad m] [LawfulMonad m] {f : Nat → α → m β} {as : NonEmptyArray α} :
+    toArr <$> as.mapIdxM f = as.toArr.mapIdxM f := by
+  have h_inj {X Y : m (Array β)} (h : Array.toList <$> X = Array.toList <$> Y) : X = Y := by
+    have h2 : List.toArray <$> (Array.toList <$> X) = List.toArray <$> (Array.toList <$> Y) := by rw [h]
+    simp only [Functor.map_map, Array.toArray_toList] at h2
+    simp_all only [Array.toList_inj, implies_true, map_inj_right_of_nonempty, id_map']
+  apply h_inj
+  simp only [mapIdxM, size, Array.mapIdxM, toArr]
+  simp_all only [Array.toList_inj, implies_true, map_inj_right_of_nonempty, toArr_mapFinIdxM, toArr]
+
+theorem toList_mapIdxM [Monad m] [LawfulMonad m] {f : Nat → α → m β} {as : NonEmptyArray α} :
+    toList <$> as.mapIdxM f = as.toList.mapIdxM f := by
+  obtain ⟨h, t⟩ := as
+  simp only [mapIdxM, mapFinIdxM, bind_pure_comp, map_bind, Functor.map_map, toList]
+  rw [List_mapIdxM_cons]
+  congr; funext b
+  have eq1 : Array.toList <$> Array.mapIdxM (fun i a => f (i + 1) a) t = List.mapIdxM (fun i a => f (i + 1) a) t.toList :=
+    _root_.Array.toList_mapIdxM
+  have eq2 : Array.mapIdxM (fun i a => f (i + 1) a) t = Array.mapFinIdxM t (fun i a _ => f (i + 1) a) := rfl
+  rw [eq2] at eq1
+  rw [← eq1]
+  simp only [bind_pure_comp, Functor.map_map]
 
 end NonEmpty.CorrectByConstruction.Array

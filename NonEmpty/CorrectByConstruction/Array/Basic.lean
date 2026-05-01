@@ -96,7 +96,7 @@ def mapFinIdxM [Monad m] (as : NonEmptyArray α) (f : (i : Nat) → α → (h : 
   return ⟨← f 0 as.head (by simp only [size]; omega),
           ← as.tail.mapFinIdxM (fun i a h => f (i + 1) a (by simp only [size] at h ⊢; omega))⟩
 
-def mapIdxM [Monad m] (as : NonEmptyArray α) (f : Nat → α → m β) : m (NonEmptyArray β) :=
+def mapIdxM [Monad m] (f : Nat → α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
   as.mapFinIdxM (fun i a _ => f i a)
 
 /-- Map a function over a NonEmptyArray, passing the index. -/
@@ -105,7 +105,7 @@ def mapFinIdx (as : NonEmptyArray α) (f : (i : Nat) → α → (h : i < as.size
    as.tail.mapFinIdx (fun i a h => f (i + 1) a (by simp only [size] at h ⊢; omega))⟩
 
 /-- Map a function over a NonEmptyArray, passing the index. -/
-def mapIdx (as : NonEmptyArray α) (f : Nat → α → β) : NonEmptyArray β :=
+def mapIdx (f : Nat → α → β) (as : NonEmptyArray α) : NonEmptyArray β :=
   ⟨f 0 as.head,
    as.tail.mapIdx (fun i => f (i + 1))⟩
 
@@ -124,6 +124,28 @@ def toListAppend (xs : NonEmptyArray α) (l : List α) : List α := xs.toList ++
 def back (xs : NonEmptyArray α) : α := if h : xs.tail.size > 0 then xs.tail.back h else xs.head
 def back! [Inhabited α] (xs : NonEmptyArray α) : α := xs.back
 def back? (xs : NonEmptyArray α) : Option α := some xs.back
+
+@[simp] theorem toArr_back (xs : NonEmptyArray α) : xs.toArr.back (by simp only [toArr,
+  Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]; omega) = xs.back := by
+  obtain ⟨h, t⟩ := xs
+  simp only [toArr, Array.back_append, Array.isEmpty_iff, List.back_toArray, List.getLast_singleton,
+    back, gt_iff_lt]
+  split <;> simp_all only [left_eq_dite_iff, Nat.not_lt, Nat.le_zero_eq, Array.size_eq_zero_iff,
+    false_implies, List.size_toArray, List.length_nil, Nat.lt_irrefl, ↓reduceDIte]
+
+@[simp] theorem toArr_back? (xs : NonEmptyArray α) : xs.toArr.back? = xs.back? := by
+  obtain ⟨h, t⟩ := xs
+  rw [toArr, Array.back?_append, back?, back]
+  split
+  · next h_size =>
+    rw [Array.back?_eq_getElem?, getElem?_pos (c := t) (i := t.size - 1) (h := Nat.sub_lt h_size (by decide))]
+    simp only [List.back?_toArray, List.getLast?_singleton, Option.or_some, Option.getD_some,
+      Array.back_eq_getElem]
+  · next h_size =>
+    have : t = #[] := Array.size_eq_zero_iff.1 (by simpa only [Array.size_eq_zero_iff, gt_iff_lt,
+      Nat.not_lt, Nat.le_zero_eq] using h_size)
+    simp only [this, List.back?_toArray, List.getLast?_nil, List.getLast?_singleton, Option.or_some,
+      Option.getD_none]
 
 def singleton (a : α) : NonEmptyArray α := ⟨a, #[]⟩
 
