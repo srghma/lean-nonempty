@@ -82,11 +82,17 @@ def mapFinIdxM [Monad m] (as : NonEmptyArray α) (f : (i : Nat) → α → (h : 
 def mapIdxM [Monad m] (as : NonEmptyArray α) (f : Nat → α → m β) : m (NonEmptyArray β) :=
   as.mapFinIdxM (fun i a _ => f i a)
 
-def mapIdx (as : NonEmptyArray α) (f : Nat → α → β) : NonEmptyArray β :=
-  Id.run (as.mapIdxM (fun i a => pure (f i a)))
-
+/-- Map a function over a NonEmptyArray, passing the index. -/
 def mapFinIdx (as : NonEmptyArray α) (f : (i : Nat) → α → (h : i < as.size) → β) : NonEmptyArray β :=
-  Id.run (as.mapFinIdxM (fun i a h => pure (f i a h)))
+  ⟨f 0 as.head (by simp only [size]; omega),
+   as.tail.mapFinIdx (fun i a h => f (i + 1) a (by simp only [size] at h ⊢; omega))⟩
+
+/-- Map a function over a NonEmptyArray, passing the index. -/
+def mapIdx (as : NonEmptyArray α) (f : Nat → α → β) : NonEmptyArray β :=
+  ⟨f 0 as.head,
+   as.tail.mapIdx (fun i => f (i + 1))⟩
+
+
 
 --------------------------------------------------------------------------------
 -- API Mapped from standard `Array`
