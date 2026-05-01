@@ -1,5 +1,5 @@
 module
-
+import Aesop
 public section
 
 -- why this is needed? for https://github.com/leanprover/lean4/issues/4964#issuecomment-4337841019
@@ -622,6 +622,57 @@ Helper lemmas
       Nat.zero_add, size_attach, size, Array.attach_append, List.attach_toArray, List.attachWith_mem_toArray,
       List.attach_cons, List.attach_nil, List.map_nil, List.map_cons, List.map_toArray, Array.map_append,
       Array.map_map, Array.size_map, Array.size_attach, List.getElem_toArray, List.getElem_singleton]
+
+@[simp] theorem sizeOf_get [SizeOf α] (as : NonEmptyArray α) (i : Fin as.size) : sizeOf (as.get i) < sizeOf as := by
+  obtain ⟨idx, h_idx⟩ := i
+  cases idx with
+  | zero =>
+    -- 'as.get ⟨0, _⟩' is definitionally 'as.head'
+    change sizeOf as.head < sizeOf as
+
+    cases as with | mk hd tl =>
+    change sizeOf hd < 1 + sizeOf hd + sizeOf tl
+    omega
+
+  | succ n =>
+    have hn : n < as.tail.size := by
+      simp only [size] at h_idx
+      omega
+
+    -- 'as.get ⟨n + 1, _⟩' is definitionally 'as.tail[n]' (proof irrelevance handles the exact proof match)
+    change sizeOf (as.tail[n]'hn) < sizeOf as
+
+    -- Extract the array theorem BEFORE breaking apart 'as'
+    have step := Array.sizeOf_getElem as.tail n hn
+
+    -- Now safely break apart 'as'
+    cases as with | mk hd tl =>
+
+    -- Expose the raw sizeOf math to the goal
+    change sizeOf (tl[n]'hn) < 1 + sizeOf hd + sizeOf tl
+
+    -- Clean up `step` so `omega` recognizes it!
+    change sizeOf (tl[n]'hn) < sizeOf tl at step
+
+    omega
+
+@[simp] theorem sizeOf_getElem [SizeOf α] (as : NonEmptyArray α) (i : Nat) (h : i < as.size) :
+    sizeOf (as[i]'h) < sizeOf as :=
+  sizeOf_get as ⟨i, h⟩
+
+@[simp] theorem sizeOf_lt_of_mem [SizeOf α] {as : NonEmptyArray α} {a : α} (h : a ∈ as) : sizeOf a < sizeOf as := by
+  rw [NonEmptyArray.mem_head_or_tail] at h
+  rcases h with rfl | h_tail
+  · -- case 1: 'a' is the head
+    cases as with | mk hd tl =>
+    change sizeOf hd < 1 + sizeOf hd + sizeOf tl
+    omega
+  · -- case 2: 'a' is in the tail
+    have step := Array.sizeOf_lt_of_mem h_tail
+    cases as with | mk hd tl =>
+    change sizeOf a < 1 + sizeOf hd + sizeOf tl
+    change sizeOf a < sizeOf tl at step
+    omega
 
 end NonEmptyArray
 
