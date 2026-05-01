@@ -84,7 +84,7 @@ macro_rules
     if terms.isEmpty then
       Lean.Macro.throwError "nel! literal must contain at least one element"
     else
-      ``(NonEmptyList.mk [$elems,*] (by simp))
+      ``(NonEmptyList.mk [$elems,*] (by decide))
 
 example : NonEmptyList Nat := ![1, 2, 3]
 example : NonEmptyList String := !["hello", "world"]

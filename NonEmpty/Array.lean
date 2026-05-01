@@ -78,7 +78,7 @@ macro_rules
     if terms.isEmpty then
       Lean.Macro.throwError "#! literal must contain at least one element"
     else
-      ``(NonEmptyArray.mk #[$elems,*] (by simp))
+      ``(NonEmptyArray.mk #[$elems,*] (by decide))
 
 example : NonEmptyArray Nat := #![1, 2, 3]
 example : NonEmptyArray String := #!["hello", "world"]

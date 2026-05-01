@@ -114,11 +114,11 @@ def ofFn {n : Nat} (f : Fin (n + 1) → α) : NonEmptyArray α :=
   ⟨f ⟨0, by omega⟩, Array.ofFn (fun (i : Fin n) => f ⟨i.val + 1, by omega⟩)⟩
 
 @[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
-  simp [ofFn, size]; omega
+  simp only [size, ofFn, Fin.zero_eta, Array.size_ofFn]; omega
 
 @[simp] theorem getElem_ofFn {n : Nat} (f : Fin (n + 1) → α) (i : Nat) (h : i < (ofFn f).size) :
-    (ofFn f)[i] = f ⟨i, by simp [size_ofFn] at h; exact h⟩ := by
-  simp [GetElem.getElem, ofFn, size]
+    (ofFn f)[i] = f ⟨i, by simp only [size, size_ofFn] at h; exact h⟩ := by
+  simp only [getElem, ofFn, Fin.zero_eta, size]
   unfold NonEmptyArray.get
   split
   · next h_eq =>
@@ -126,7 +126,7 @@ def ofFn {n : Nat} (f : Fin (n + 1) → α) : NonEmptyArray α :=
     congr
   · next n' h_eq =>
     cases h_eq
-    simp [Array.getElem_ofFn]
+    simp only [Array.getElem_ofFn, Nat.succ_eq_add_one]
 
 -- Modifications returning NonEmptyArray
 def push (xs : NonEmptyArray α) (a : α) : NonEmptyArray α :=
@@ -219,12 +219,14 @@ def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
   omega
 
 @[simp] theorem getElem_fromArray (xs : Array α) (h : xs.size > 0) (i : Nat) (hi : i < (fromArray xs h).size) :
-  (fromArray xs h)[i] = xs[i]'(by simpa using hi) := by
+  (fromArray xs h)[i] = xs[i]'(by simpa only [size, size_fromArray] using hi) := by
   cases i with
   | zero => rfl
   | succ i =>
-    have hi' : i + 1 < xs.size := by simpa using hi
-    have step : (fromArray xs h).get ⟨i + 1, hi⟩ = (xs.extract 1)[i]'(by simp [Array.size_extract]; omega) := rfl
+    have hi' : i + 1 < xs.size := by simpa only [size, size_fromArray] using hi
+    have step : (fromArray xs h).get ⟨i + 1, hi⟩ = (xs.extract 1)[i]'(by
+      simp only [Array.size_extract, Std.le_refl, Nat.min_eq_left];
+      omega) := rfl
     have : (fromArray xs h)[i + 1] = (fromArray xs h).get ⟨i + 1, hi⟩ := rfl
     rw [this, step]
     rw [Array.getElem_extract]
@@ -276,6 +278,17 @@ def zip (as : NonEmptyArray α) (bs : NonEmptyArray β) : NonEmptyArray (α × �
 
 def zipIdx (xs : NonEmptyArray α) (start := 0) : NonEmptyArray (α × Nat) :=
   ⟨(xs.head, start), xs.tail.zipIdx (start + 1)⟩
+
+@[simp] theorem toArr_zipIdx (xs : NonEmptyArray α) (start := 0) :
+    (xs.zipIdx start).toArr = xs.toArr.zipIdx start := by
+  obtain ⟨head, tail⟩ := xs
+  apply Array.ext
+  · simp [zipIdx, toArr]
+  · intro i h1 h2
+    simp [zipIdx, toArr, Array.getElem_zipIdx, Array.getElem_append]
+    split <;> simp_all only [toArr, Array.size_append, List.size_toArray, List.length_cons,
+      List.length_nil, Nat.zero_add, Array.size_zipIdx, Nat.add_zero, Prod.mk.injEq, true_and]
+    · omega
 
 def unzip (as : NonEmptyArray (α × β)) : NonEmptyArray α × NonEmptyArray β :=
   let (a, b) := as.toArr.unzip
@@ -411,7 +424,8 @@ instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendL
     (xs.set i a h).toArr = xs.toArr.set i a (by simp only [toArr, Array.size_append,
       List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]; exact h) := by
   unfold set; split
-  · subst i; simp [toArr, Array.set_append_left]
+  · subst i; simp only [toArr, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
+    Nat.lt_add_one, Array.set_append_left, List.set_toArray, List.set_cons_zero]
   · have h' : i < xs.toArr.size := by simp only [toArr, Array.size_append, List.size_toArray,
     List.length_cons, List.length_nil, Nat.zero_add]; exact h
     rw [Array.set_append_right h' (by simp only [List.size_toArray, List.length_cons,
@@ -535,26 +549,32 @@ Helper lemmas
       or_true]⟩⟩
 
 @[simp] theorem size_attach (as : NonEmptyArray α) : as.attach.size = as.size := by
-  simp [attach, size, Array.size_attach]
+  simp only [size, attach, Array.size_map, Array.size_attach]
 
 @[simp] theorem getElem_attach (as : NonEmptyArray α) (i : Nat) (h : i < as.attach.size) :
-    as.attach[i] = ⟨as[i]'(by simpa using h), by
-      have h' : i < as.size := by simpa using h
+    as.attach[i] = ⟨as[i]'(by simpa only [size, attach, Array.size_map, Array.size_attach] using h), by
+      have h' : i < as.size := by simpa only [size, attach, Array.size_map, Array.size_attach] using
+        h
       rw [mem_def, ← toArr_getElem (h := h')]
       exact Array.getElem_mem ..⟩ := by
   apply Subtype.ext
   cases i with
   | zero => rfl
   | succ i =>
-    have h' : i + 1 < as.size := by simpa using h
+    have h' : i + 1 < as.size := by simpa only [size, attach, Array.size_map,
+      Array.size_attach] using h
     show (as.attach.get ⟨i + 1, h⟩).val = as.get ⟨i + 1, h'⟩
     unfold NonEmptyArray.get
-    simp [attach, Array.getElem_map, Array.getElem_attach]
+    simp only [attach, Array.getElem_map, Array.getElem_attach]
 
 @[simp] theorem toArr_attach (as : NonEmptyArray α) :
-    as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simpa [mem_def] using h⟩ := by
+    as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simpa only [mem_def, toArr,
+      Array.mem_append, List.mem_toArray, List.mem_cons, List.not_mem_nil, or_false] using h⟩ := by
   apply Array.ext
-  · simp [Array.size_attach]
+  · simp only [toArr, attach, Array.size_append, List.size_toArray, List.length_cons,
+    List.length_nil, Nat.zero_add, Array.size_map, Array.size_attach, Array.attach_append,
+    List.attach_toArray, List.attachWith_mem_toArray, List.attach_cons, List.attach_nil,
+    List.map_nil, List.map_cons, List.map_toArray, Array.map_append, Array.map_map]
   · intro i h1 h2
     apply Subtype.ext
     simp only [toArr, attach, Array.getElem_append, List.size_toArray, List.length_cons,

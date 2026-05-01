@@ -17,11 +17,14 @@ theorem Slice.startsWith_dropEndWhile_of_startsWith_false (s : Slice) (p q : Cha
     intro heq
     have h' : s.skipSuffixWhile q = s.startPos := by
       rw [heq, Slice.skipSuffixWhile_eq_revSkipWhile_endPos, Slice.Pattern.Model.Pos.revSkipWhile_eq_self]
-      simp [String.Slice.Pattern.Model.CharPred.revMatchesAt_iff, Slice.Pattern.Model.CharPred.revMatchesAt_iff, heq]
-    exact hne (Slice.Pos.ext (by simp [Slice.dropEndWhile_eq_sliceTo_skipSuffixWhile, h']))
+      simp only [Slice.Pattern.Model.CharPred.revMatchesAt_iff, heq, ne_eq, not_true_eq_false,
+        not_exists, Bool.not_eq_true, forall_false]
+    exact hne (Slice.Pos.ext (by simp only [Slice.offset_startPos, Slice.offset_endPos,
+      Slice.dropEndWhile_eq_sliceTo_skipSuffixWhile, h', Slice.rawEndPos_sliceTo]))
   have : (s.dropEndWhile q).startPos.get hne = s.startPos.get hne' := by
     rw [Slice.Pos.get, Slice.Pos.get]
-    simp_all [Slice.dropEndWhile_eq_sliceTo_skipSuffixWhile, Slice.sliceTo, Slice.startPos, ne_eq]
+    simp_all only [Slice.startPos, ne_eq, Slice.dropEndWhile_eq_sliceTo_skipSuffixWhile,
+      Slice.sliceTo, Pos.Raw.byteIdx_zero, Nat.add_zero]
     rfl
   rw [this]
   exact h hne'
@@ -34,9 +37,14 @@ theorem Slice.endsWith_dropWhile_of_endsWith_false (s : Slice) (p q : Char → B
     intro heq
     have h' : s.skipPrefixWhile q = s.endPos := by
       rw [heq, Slice.skipPrefixWhile_eq_skipWhile_startPos, Slice.Pattern.Model.Pos.skipWhile_eq_self]
-      simp [String.Slice.Pattern.Model.CharPred.matchesAt_iff, Slice.Pattern.Model.CharPred.matchesAt_iff, heq]
-    exact hne (Slice.Pos.ext (by simp [Slice.dropWhile_eq_sliceFrom_skipPrefixWhile, h']))
-  have : ((s.dropWhile q).endPos.prev hne).get (by simp) = (s.endPos.prev hne').get (by simp) := by
+      simp only [Slice.Pattern.Model.CharPred.matchesAt_iff, heq, ne_eq, not_true_eq_false,
+        not_exists, Bool.not_eq_true, forall_false]
+    exact hne (Slice.Pos.ext (by simp only [Slice.offset_endPos,
+      Slice.dropWhile_eq_sliceFrom_skipPrefixWhile, h', Slice.offset_startPos, Pos.Raw.eq_zero_iff,
+      Slice.byteIdx_rawEndPos, Slice.utf8ByteSize_sliceFrom, Nat.sub_self]))
+  have : ((s.dropWhile q).endPos.prev hne).get (by simp only [ne_eq, Slice.Pos.prev_ne_endPos,
+    not_false_eq_true]) = (s.endPos.prev hne').get (by simp only [ne_eq, Slice.Pos.prev_ne_endPos,
+      not_false_eq_true]) := by
     generalize h_trimmed : s.dropWhile q = trimmed at hne ⊢
     rw [Slice.dropWhile_eq_sliceFrom_skipPrefixWhile] at h_trimmed
     subst trimmed
@@ -158,7 +166,7 @@ theorem startsWith_sliceTo {p : Char → Bool} {s : Slice}
     · rfl
     · rename_i h_sub
       simp only [Slice.Pos.get_eq_get_ofSliceTo, Slice.Pos.ofSliceTo_startPos]
-      simp [Slice.startPos_ne_endPos h_s] at h
+      simp only [Slice.startPos_ne_endPos h_s, ↓reduceDIte] at h
       exact h
 
 /-! ### Helper lemmas for monotonicity of position mappings -/
