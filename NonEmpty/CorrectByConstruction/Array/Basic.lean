@@ -62,7 +62,6 @@ instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) whe
 @[simp] abbrev cons (a : α) (xs : NonEmptyArray α) : NonEmptyArray α :=
   ⟨a, #[xs.head] ++ xs.tail⟩
 
-
 @[simp] abbrev map (f : α → β) (xs : NonEmptyArray α) : NonEmptyArray β :=
   ⟨f xs.head, xs.tail.map f⟩
 
@@ -176,6 +175,21 @@ def swapAt! (xs : NonEmptyArray α) (i : Nat) (v : α) : α × NonEmptyArray α 
 def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
   ⟨xs[0]'h, xs.extract 1 xs.size⟩
 
+@[simp] theorem toArr_fromArray (xs : Array α) (h : xs.size > 0) :
+  (fromArray xs h).toArr = xs := by
+    simp_all only [toArr]
+    grind?
+
+@[simp] theorem size_fromArray (xs : Array α) (h : xs.size > 0) :
+  (fromArray xs h).size = xs.size := by
+    simp_all only [size]
+    grind?
+
+@[simp] theorem getElem_fromArray (xs : Array α) (h : xs.size > 0) (i : Nat) (hi : i < (fromArray xs h).size) :
+  (fromArray xs h)[i] = xs[i]'(by simpa using hi) := by
+    simp_all only [size]
+    grind?
+
 def reverse (xs : NonEmptyArray α) : NonEmptyArray α :=
   let arr := xs.toArr.reverse
   have : arr.size > 0 := by simp [arr]
@@ -243,6 +257,7 @@ def rightpad (n : Nat) (a : α) (xs : NonEmptyArray α) : NonEmptyArray α :=
 def pop (xs : NonEmptyArray α) : Array α := xs.toArr.pop
 def shrink (xs : NonEmptyArray α) (n : Nat) : Array α := xs.toArr.shrink n
 def take (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArr.take i
+def takeWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.takeWhile p
 def drop (xs : NonEmptyArray α) (i : Nat) : Array α := xs.toArr.drop i
 def filter (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.filter p
 def filterMap (f : α → Option β) (xs : NonEmptyArray α) : Array β := xs.toArr.filterMap f
@@ -259,7 +274,6 @@ def eraseIdxIfInBounds (xs : NonEmptyArray α) (i : Nat) : Array α :=
 
 def erase [BEq α] (xs : NonEmptyArray α) (a : α) : Array α := xs.toArr.erase a
 def eraseP (xs : NonEmptyArray α) (p : α → Bool) : Array α := xs.toArr.eraseP p
-def takeWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.takeWhile p
 def popWhile (p : α → Bool) (xs : NonEmptyArray α) : Array α := xs.toArr.popWhile p
 def reduceOption (xs : NonEmptyArray (Option α)) : Array α := xs.toArr.reduceOption
 def partition (p : α → Bool) (xs : NonEmptyArray α) : Array α × Array α := xs.toArr.partition p
@@ -313,6 +327,42 @@ def findIdxM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option 
 instance : Append (NonEmptyArray α) := ⟨append⟩
 instance : HAppend (NonEmptyArray α) (Array α) (NonEmptyArray α) := ⟨appendArray⟩
 instance : HAppend (NonEmptyArray α) (List α) (NonEmptyArray α) := ⟨appendList⟩
+
+@[simp] theorem toArr_singleton (a : α) : (singleton a).toArr = #[a] := by
+  simp_all only [toArr, Array.append_eq_toArray_iff, List.cons_append, List.nil_append, List.cons.injEq, Array.toList_eq_nil_iff]
+  apply And.intro
+  · rfl
+  · rfl
+@[simp] theorem toArr_push (xs : NonEmptyArray α) (a : α) : (xs.push a).toArr = xs.toArr.push a := by
+  simp_all only [toArr, Array.push_append]
+  rfl
+@[simp] theorem toArr_map (f : α → β) (xs : NonEmptyArray α) : (xs.map f).toArr = xs.toArr.map f := by
+  simp_all only [toArr, Array.map_append, List.map_toArray, List.map_cons, List.map_nil]
+@[simp] theorem size_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).size = n + 1 := by
+  simp_all only [size]
+  grind?
+@[simp] theorem toArr_ofFn {n : Nat} (f : Fin (n + 1) → α) : (ofFn f).toArr = Array.ofFn f := by
+  simp_all only [toArr]
+  grind?
+@[simp] theorem size_append (xs ys : NonEmptyArray α) : (xs ++ ys).size = xs.size + ys.size := by
+  simp_all only [size]
+  grind?
+@[simp] theorem toArr_append (xs ys : NonEmptyArray α) : (xs ++ ys).toArr = xs.toArr ++ ys.toArr := by
+  simp_all only [toArr, Array.append_singleton_assoc, Array.push_append, Array.append_assoc]
+  grind?
+@[simp] theorem toArr_set (xs : NonEmptyArray α) (i : Nat) (a : α) (h : i < xs.size) :
+  (xs.set i a h).toArr = xs.toArr.set i a (by simp_all only [size, toArr, Array.size_append, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]) := by
+    simp_all only [toArr]
+    grind?
+
+@[simp] theorem size_reverse (xs : NonEmptyArray α) : xs.reverse.size = xs.size := by
+  simp_all only [size, Nat.add_left_cancel_iff]
+  grind?
+@[simp] theorem toArr_reverse (xs : NonEmptyArray α) : xs.reverse.toArr = xs.toArr.reverse := by
+  simp_all only [toArr, Array.reverse_append, List.reverse_toArray, List.reverse_cons, List.reverse_nil, List.nil_append, Array.append_singleton]
+  grind?
+
+
 
 structure Mem (as : NonEmptyArray α) (a : α) : Prop where
   val : a ∈ as.toList
