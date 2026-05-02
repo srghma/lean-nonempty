@@ -5,6 +5,7 @@ A Lean 4 library providing **non-empty variants** of standard data structures:
 - `NonEmptyArray α` 📦
 - `NonEmptyList α` 📜
 - `NonEmptyString` 📝
+- `NonEmptyStringTrimmed` ✂️
 
 These types enforce non-emptiness **at the type level**, giving you better safety guarantees and eliminating a whole class of runtime errors.
 
@@ -12,7 +13,9 @@ These types enforce non-emptiness **at the type level**, giving you better safet
 
 ## Features ✨
 
-- Drop-in wrappers around Lean’s `Array`, `List`, and `String`.
+- **Two implementation strategies**:
+  - **Subtype-based**: Drop-in wrappers around Lean’s `Array`, `List`, and `String` that carry a proof of non-emptiness.
+  - **Correct-by-Construction**: A specialized `NonEmptyArray` implementation that guarantees non-emptiness by its structural definition (`head` and `tail`).
 
 - Proof-carrying guarantees: you cannot construct an empty `NonEmptyArray`, `NonEmptyList`, or `NonEmptyString`.
 
@@ -21,6 +24,8 @@ These types enforce non-emptiness **at the type level**, giving you better safet
   - `#![...]` for `NonEmptyArray` 📦
   - `![...]` for `NonEmptyList` 📜
   - `nes!"..."` for `NonEmptyString` 📝
+  - `nest_trim!"..."` for `NonEmptyStringTrimmed` (trims whitespace) ✂️
+  - `nest!"..."` for `NonEmptyStringTrimmed` (requires already trimmed) ✂️
 
 - Standard operations: `head`, `tail`, `cons`, `map`, `append`, etc.
 
@@ -55,16 +60,17 @@ Then import in your project:
 import NonEmpty.Array
 import NonEmpty.List
 import NonEmpty.String
+import NonEmpty.String.Trimmed
 ```
 
 ---
 
 ## Usage 🚀
-
 ### NonEmptyArray 📦
 
 ```lean
 import NonEmpty.Array
+open NonEmpty.Array
 
 def ex1 : NonEmptyArray Nat := #![1, 2, 3]
 
@@ -91,10 +97,31 @@ Safe conversion from a standard array:
 
 ---
 
+### NonEmptyArray (Correct-by-Construction) 🏗️
+
+This version of `NonEmptyArray` is defined structurally (as a head and a tail), making it natively non-empty without needing an explicit proof.
+
+```lean
+import NonEmpty.CorrectByConstruction.Array
+open NonEmpty.CorrectByConstruction.Array
+
+def exCbC : NonEmptyArray Nat := #![1, 2, 3]
+
+#guard exCbC.head = 1
+#guard exCbC.tail = #[2, 3]
+
+-- Structural cons
+def exCbC2 := NonEmptyArray.cons 0 exCbC
+#guard exCbC2.head = 0
+#guard exCbC2.tail = #[1, 2, 3]
+```
+
+---
 ### NonEmptyList 📜
 
 ```lean
 import NonEmpty.List
+open NonEmpty.List
 
 def exList : NonEmptyList String := !["a", "b", "c"]
 
@@ -119,6 +146,7 @@ Safe conversion:
 
 ```lean
 import NonEmpty.String
+open NonEmpty.String
 
 def exStr : NonEmptyString := nes!"Hello"
 
@@ -135,6 +163,32 @@ Safe conversion:
 ```lean
 #eval NonEmptyString.fromString? "Hi"  -- some nes!"Hi"
 #eval NonEmptyString.fromString? ""    -- none
+```
+
+---
+
+### NonEmptyStringTrimmed ✂️
+
+```lean
+import NonEmpty.String.Trimmed
+open NonEmpty.String.Trimmed
+
+-- Automatically trims whitespace
+def exTrim : NonEmptyStringTrimmed := nest_trim!"  Hello World  "
+
+#guard exTrim.toString == "Hello World"
+
+-- Requires string to be trimmed already
+def exTrimStrict : NonEmptyStringTrimmed := nest!"Hello"
+
+#guard exTrimStrict.toString == "Hello"
+```
+
+Safe conversion:
+
+```lean
+#eval NonEmptyStringTrimmed.fromString? "  Hi  "  -- some nest_trim!"Hi"
+#eval NonEmptyStringTrimmed.fromString? "   "     -- none
 ```
 
 ---

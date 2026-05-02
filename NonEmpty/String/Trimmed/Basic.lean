@@ -118,7 +118,7 @@ macro "nest!" s:str : term => do
     let strLit := Lean.Syntax.mkStrLit strVal
     ``( NonEmptyStringTrimmed.mk
           (NonEmptyString.mk $strLit (of_decide_eq_true rfl))
-          (of_decide_eq_true rfl)
+          (by native_decide)
           (by native_decide) )
 
 

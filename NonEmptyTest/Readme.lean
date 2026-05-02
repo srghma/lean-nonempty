@@ -40,12 +40,19 @@ def ex3 : NonEmptyString := nes!"lean"
 
 
 -- === NonEmptyStringTrimmed ===
-def ex4 : NonEmptyStringTrimmed := nest_trim!"  trimmed  "
+def ex4 : NonEmptyStringTrimmed := nest_trim!"  trimmed  " --
 
 #guard ex4.toString == "trimmed"
 -- The macro should have already trimmed the string
 #guard ex4.toString.startsWith Char.isWhitespace == false
 #guard ex4.toString.endsWith Char.isWhitespace == false
+
+def ex5 : NonEmptyStringTrimmed := nest!"trimmed"
+
+#guard ex5.toString == "trimmed"
+-- The macro should have already trimmed the string
+#guard ex5.toString.startsWith Char.isWhitespace == false
+#guard ex5.toString.endsWith Char.isWhitespace == false
 
 end section
 
