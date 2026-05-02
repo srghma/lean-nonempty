@@ -506,6 +506,18 @@ theorem mem_head_or_tail {a : α} {as : NonEmptyArray α} : a ∈ as ↔ a = as.
   · intro ⟨h⟩; exact (List.mem_cons.1 h).imp id (Array.mem_def.2)
   · intro h; exact ⟨List.mem_cons.2 (h.imp id (Array.mem_def.1))⟩
 
+theorem mem_iff_getElem {a : α} {as : NonEmptyArray α} :
+    a ∈ as ↔ ∃ (i : Nat) (h : i < as.size), as[i] = a := by
+  simp only [mem_def, Array.mem_iff_getElem, size_toArr]
+  simp_all only [toArr, size, toArr_getElem]
+
+theorem mem_iff_exists_getElem {a : α} {as : NonEmptyArray α} :
+    a ∈ as ↔ ∃ (i : Fin as.size), as[i] = a := by
+  rw [mem_iff_getElem]
+  constructor
+  · rintro ⟨i, h, rfl⟩; exact ⟨⟨i, h⟩, rfl⟩
+  · rintro ⟨⟨i, h⟩, rfl⟩; exact ⟨i, h, rfl⟩
+
 instance [Monad m] : ForIn' m (NonEmptyArray α) α inferInstance where
   forIn' xs init f := forIn' xs.toArr init (fun a h => f a ⟨by
     rw [Array.mem_def, toArr_toList] at h
