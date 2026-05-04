@@ -618,6 +618,13 @@ Helper lemmas
     unfold NonEmptyArray.get
     simp only [attach, Array.getElem_map, Array.getElem_attach]
 
+@[simp] theorem attach_map {α β : Type} (as : NonEmptyArray α) (f : α → β) : as.attach.map (fun x => f x.val) = as.map f := by
+  ext <;> simp
+
+@[simp] theorem attach_map_val {α : Type} (as : NonEmptyArray α) : as.attach.map (fun x => x.val) = as := by
+  simp_all only [map, attach, Array.map_map, Function.comp_apply, Array.map_subtype, Array.unattach_attach,
+    Array.map_id_fun', id_eq]
+
 @[simp] theorem toArr_attach (as : NonEmptyArray α) :
     as.attach.toArr = as.toArr.attach.map fun ⟨x, h⟩ => ⟨x, by simpa only [mem_def, toArr,
       Array.mem_append, List.mem_toArray, List.mem_cons, List.not_mem_nil, or_false] using h⟩ := by
