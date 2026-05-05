@@ -162,20 +162,14 @@ theorem mapIdx_spec {f : Nat → α → β} {xs : NonEmptyArray α}
 
 /-! ### zipIdx -/
 
-@[simp, grind =] theorem getElem_zipIdx {xs : NonEmptyArray α} {k : Nat} {i : Nat} (h : i < (xs.zipIdx k).size) :
-    (xs.zipIdx k)[i] = (xs[i]'(by simp_all only [size, size_zipIdx]), k + i) := by
-  cases i with
-  | zero => rfl
-  | succ i =>
-    simp only [getElem, zipIdx, size]
-    unfold NonEmptyArray.get
-    simp
-    omega
-
 @[simp, grind =] theorem zipIdx_toArr {xs : NonEmptyArray α} {k : Nat} :
     (xs.zipIdx k).toArr = xs.toArr.zipIdx k := by
   simp only [toArr, zipIdx, _root_.Array.zipIdx_append, _root_.Array.zipIdx_toArray, List.zipIdx_cons,
     List.zipIdx_nil, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add]
+
+@[simp, grind =] theorem getElem_zipIdx {xs : NonEmptyArray α} {k : Nat} {i : Nat} (h : i < (xs.zipIdx k).size) :
+    (xs.zipIdx k)[i] = (xs[i]'(by simp_all only [size, size_zipIdx]), k + i) := by
+  simp only [← toArr_getElem, zipIdx_toArr, _root_.Array.getElem_zipIdx]
 
 @[simp, grind =] theorem toList_zipIdx {xs : NonEmptyArray α} {k : Nat} :
     (xs.zipIdx k).toList = xs.toList.zipIdx k := by
@@ -183,12 +177,8 @@ theorem mapIdx_spec {f : Nat → α → β} {xs : NonEmptyArray α}
 
 theorem mk_mem_zipIdx_iff_le_and_getElem?_sub {k i : Nat} {x : α} {xs : NonEmptyArray α} :
     (x, i) ∈ xs.zipIdx k ↔ k ≤ i ∧ xs[i - k]? = some x := by
-  simp only [mem_def, toArr, zipIdx_toArr, _root_.Array.mk_mem_zipIdx_iff_le_and_getElem?_sub,
-    getElem?, Option.dite_none_right_eq_some, Option.some.injEq, Array.size_append,
-    List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add, size, and_congr_right_iff]
-  intro a
-  simp_all only [size, toArr_getElem]
-  rfl
+  simp_all only [mem_def, toArr, toArr_zipIdx, _root_.Array.mk_mem_zipIdx_iff_le_and_getElem?_sub,
+    size, getElem?_eq_toArr_getElem?]
 
 theorem mk_mem_zipIdx_iff_getElem? {x : α} {i : Nat} {xs : NonEmptyArray α} :
     (x, i) ∈ xs.zipIdx ↔ xs[i]? = some x := by
@@ -644,13 +634,10 @@ theorem mapIdx_eq_replicate_iff {xs : NonEmptyArray α} {f : Nat → α → β} 
     xs.mapIdx f = NonEmptyArray.ofFn (n := xs.tail.size) (fun _ => b) ↔ ∀ (i : Nat) (h : i < xs.size), f i xs[i] = b := by
   constructor
   · intro heq i hi
-    have h_eq : (xs.mapIdx f)[i]? = (NonEmptyArray.ofFn (n := xs.tail.size) fun _ => b)[i]? :=
-      congrArg (fun xs => xs[i]?) heq
-    simp only [NonEmptyArray.getElem?_def, size_mapIdx, dif_pos hi,
-        getElem_mapIdx, size_ofFn, getElem_ofFn] at h_eq
-    simp only [size] at hi
-    rw [dif_pos (by omega)] at h_eq
-    exact Option.some.inj h_eq
+    have h_size : xs.size = 1 + xs.tail.size := rfl
+    have h_eq : (xs.mapIdx f)[i]'(by simpa) = (NonEmptyArray.ofFn (n := xs.tail.size) (fun _ => b))[i]'(by rw [size_ofFn]; omega) := by
+      simp only [size, heq, getElem_ofFn]
+    simpa only [size, getElem_mapIdx, getElem_ofFn] using h_eq
   · intro h
     apply toArr_inj.1
     rw [toArr_mapIdx, toArr_ofFn]
