@@ -73,10 +73,8 @@ Since both strings have no whitespace at their boundaries, the result is also tr
 instance : HAppend NonEmptyStringTrimmed NonEmptyStringTrimmed NonEmptyStringTrimmed where
   hAppend s1 s2 :=
     { toString := s1.toNonEmptyString.toString ++ s2.toNonEmptyString.toString,
-      isNonEmpty := by
-        intro h
-        have := String.append_eq_empty_iff.1 h
-        exact s1.toNonEmptyString.isNonEmpty this.1,
+      isNonEmpty := by simp only [ne_eq, String.append_eq_empty_iff,
+        NonEmptyString.toString_ne_empty, and_self, not_false_eq_true],
       hasNoWhitespaceAtStart := by
         rw [startsWith_append_of_nonempty s1.toNonEmptyString.isNonEmpty]
         exact s1.hasNoWhitespaceAtStart,
@@ -84,6 +82,22 @@ instance : HAppend NonEmptyStringTrimmed NonEmptyStringTrimmed NonEmptyStringTri
         rw [endsWith_append_of_nonempty s2.toNonEmptyString.isNonEmpty]
         exact s2.hasNoWhitespaceAtEnd
     }
+
+instance : HAppend String NonEmptyStringTrimmed NonEmptyString where
+  hAppend s1 s2 := ⟨s1 ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    NonEmptyString.toString_ne_empty, and_false, not_false_eq_true]⟩
+
+instance : HAppend NonEmptyStringTrimmed String NonEmptyString where
+  hAppend s1 s2 := ⟨s1.toString ++ s2, by simp only [ne_eq, String.append_eq_empty_iff,
+    NonEmptyString.toString_ne_empty, false_and, not_false_eq_true]⟩
+
+instance : HAppend NonEmptyString NonEmptyStringTrimmed NonEmptyString where
+  hAppend s1 s2 := ⟨s1.toString ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    NonEmptyString.toString_ne_empty, and_self, not_false_eq_true]⟩
+
+instance : HAppend NonEmptyStringTrimmed NonEmptyString NonEmptyString where
+  hAppend s1 s2 := ⟨s1.toString ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    NonEmptyString.toString_ne_empty, and_self, not_false_eq_true]⟩
 
 end NonEmptyStringTrimmed
 

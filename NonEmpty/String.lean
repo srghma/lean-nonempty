@@ -8,6 +8,9 @@ structure NonEmptyString where
   isNonEmpty : toString ≠ ""
   deriving BEq, Hashable, Ord, Repr, DecidableEq
 
+instance : Coe NonEmptyString String where
+  coe s := s.toString
+
 instance : ToString NonEmptyString where
   toString s := s.toString
 
@@ -19,6 +22,20 @@ abbrev fromNELChar (cs : List Char) (h : cs ≠ []) : NonEmptyString :=
   ⟨String.ofList cs, by simp_all only [ne_eq, String.ofList_eq_empty_iff, not_false_eq_true]⟩
 
 abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (String.ofList cs)
+
+@[simp] theorem toString_ne_empty (s : NonEmptyString) : s.toString ≠ "" := s.isNonEmpty
+
+instance : HAppend String NonEmptyString NonEmptyString where
+  hAppend s1 s2 := ⟨s1 ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    toString_ne_empty, and_false, not_false_eq_true]⟩
+
+instance : HAppend NonEmptyString String NonEmptyString where
+  hAppend s1 s2 := ⟨s1.toString ++ s2, by simp only [ne_eq, String.append_eq_empty_iff,
+    toString_ne_empty, false_and, not_false_eq_true]⟩
+
+instance : HAppend NonEmptyString NonEmptyString NonEmptyString where
+  hAppend s1 s2 := ⟨s1.toString ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    toString_ne_empty, and_self, not_false_eq_true]⟩
 
 end NonEmptyString
 
