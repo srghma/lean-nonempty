@@ -3,12 +3,14 @@ module
 import all NonEmpty.Array
 import all NonEmpty.List
 import all NonEmpty.String
+import all NonEmpty.StringSlice
 import all NonEmpty.String.Trimmed
 import all NonEmpty.CorrectByConstruction.Array
 public meta import NonEmpty.CorrectByConstruction.Array.Basic
 
 section
 open NonEmpty.String
+open NonEmpty.StringSlice
 open NonEmpty.String.Trimmed
 open NonEmpty.Array
 open NonEmpty.List
@@ -37,6 +39,17 @@ def ex2 : NonEmptyList String := !["hello", "world"]
 def ex3 : NonEmptyString := nes!"lean"
 
 #guard ex3.toString = "lean"
+
+
+-- === NonEmptyStringSlice ===
+def ex3b : NonEmpty.StringSlice.NonEmptyStringSlice := 
+  match NonEmpty.StringSlice.NonEmptyStringSlice.fromString? "lean" with
+  | some s => s
+  | none => NonEmpty.StringSlice.NonEmptyStringSlice.mk "x".toSlice (by simp)
+
+#guard ex3b.toString = "lean"
+#guard ex3b.front = 'l'
+#guard ex3b.back = 'n'
 
 
 -- === NonEmptyStringTrimmed ===

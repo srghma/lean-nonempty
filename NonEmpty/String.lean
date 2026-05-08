@@ -1,6 +1,6 @@
 module
 
-public section
+@[expose] public section
 namespace NonEmpty.String
 
 structure NonEmptyString where
@@ -8,7 +8,7 @@ structure NonEmptyString where
   isNonEmpty : toString ≠ ""
   deriving BEq, Hashable, Ord, Repr, DecidableEq
 
-instance : Coe NonEmptyString String where
+instance : CoeOut NonEmptyString String where
   coe s := s.toString
 
 instance : ToString NonEmptyString where

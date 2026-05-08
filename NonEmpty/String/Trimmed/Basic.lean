@@ -16,10 +16,10 @@ structure NonEmptyStringTrimmed extends NonEmptyString where
 instance : ToString NonEmptyStringTrimmed where
   toString s := s.toNonEmptyString.toString
 
-instance : Coe NonEmptyStringTrimmed String where
+instance : CoeOut NonEmptyStringTrimmed String where
   coe s := s.toNonEmptyString.toString
 
-instance : Coe NonEmptyStringTrimmed NonEmptyString where
+instance : CoeOut NonEmptyStringTrimmed NonEmptyString where
   coe s := s.toNonEmptyString
 
 instance : Inhabited NonEmptyStringTrimmed where
