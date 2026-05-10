@@ -2,9 +2,11 @@ module
 public import Aesop
 import Init.Data.Array.Lemmas
 
-public section
+@[expose] public section
 
-@[simp] theorem _root_.Array.flatten_map_singleton (t : Array α) (f : α → β) :
+namespace NonEmpty.ArrayUtil
+
+@[simp] theorem flatten_map_singleton (t : Array α) (f : α → β) :
     (t.map (fun a => #[f a])).flatten = t.map f := by
   have H : (t.map (fun a => #[f a])).flatten.toList = (t.map f).toList := by
     simp only [Array.toList_flatten, Array.toList_map, List.map_map, Function.comp_def]
@@ -16,7 +18,7 @@ public section
   cases h₂ : t.map f with | mk l₂ =>
   simp_all
 
-@[simp] theorem _root_.Array.flatMap_singleton_eq_map (as : Array α) (f : α → β) :
+@[simp] theorem flatMap_singleton_eq_map (as : Array α) (f : α → β) :
     as.flatMap (fun a => #[f a]) = as.map f := by
   have H : (as.flatMap (fun a => #[f a])).toList = (as.map f).toList := by
     simp only [Array.toList_flatMap, Array.toList_map]
@@ -27,9 +29,34 @@ public section
   cases h₂ : as.map f
   simp_all
 
-@[simp] theorem _root_.Array.append_flatten_assoc (a : Array α) (b : Array (Array α)) (c : Array (Array α)) :
+@[simp] theorem append_flatten_assoc (a : Array α) (b : Array (Array α)) (c : Array (Array α)) :
     a ++ (b ++ c).flatten = a ++ b.flatten ++ c.flatten := by
   simp only [Array.flatten_append, Array.append_assoc]
+
+/-- Maps each element of the array to a monoid, and combines the results. -/
+@[simp, inline]
+def foldMap {α ω} [One ω] [Mul ω] (f : α → ω) (as : Array α) : ω :=
+  as.foldl (fun acc x => acc * f x) One.one
+
+/-- A version of `foldMap` for additive monoids. -/
+@[simp, inline]
+def foldMapAdd {α ω} [Zero ω] [Add ω] (f : α → ω) (as : Array α) : ω :=
+  as.foldl (fun acc x => acc + f x) Zero.zero
+
+/--
+Map each element of a structure to an action, evaluate these actions from
+left to right, and collect the results. For Applicative functors.
+-/
+@[simp, inline]
+def traverse {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : Array α) : m (Array β) :=
+  as.foldl (fun macc x => (fun acc y => acc.push y) <$> macc <*> f x) (pure (Array.emptyWithCapacity as.size))
+
+/-- Evaluate each action in the structure from left to right, and collect the results. -/
+@[simp, inline]
+def sequence {m : Type u → Type v} [Applicative m] {α : Type u} (as : Array (m α)) : m (Array α) :=
+  ArrayUtil.traverse id as
+
+end NonEmpty.ArrayUtil
 
 -- why this is needed? for https://github.com/leanprover/lean4/issues/4964#issuecomment-4337841019
 namespace NonEmpty.CorrectByConstruction.Array
@@ -51,10 +78,10 @@ namespace NonEmptyArray
 @[simp] abbrev toArr (xs : NonEmptyArray α) : Array α :=
   #[xs.head] ++ xs.tail
 
-@[simp] def _root_.Array.mapNonEmptyArray (as : Array α) (f : α → NonEmptyArray β) : Array β :=
+@[simp] protected def _root_.Array.mapNonEmptyArray (as : Array α) (f : α → NonEmptyArray β) : Array β :=
   as.flatMap (fun a => (f a).toArr)
 
-@[simp] theorem _root_.Array.mapNonEmptyArray_id (as : Array (NonEmptyArray α)) :
+@[simp] protected theorem _root_.Array.mapNonEmptyArray_id (as : Array (NonEmptyArray α)) :
     as.mapNonEmptyArray id = (as.map toArr).flatten := by
   simp only [Array.mapNonEmptyArray, Array.flatMap_def, id_def]
 
@@ -278,7 +305,7 @@ def back? (xs : NonEmptyArray α) : Option α := some xs.back
 @[simp] theorem _root_.Array.mapNonEmptyArray_singleton (as : Array α) (f : α → β) :
     as.mapNonEmptyArray (fun a => singleton (f a)) = as.map f := by
   simp only [Array.mapNonEmptyArray, toArr, singleton, Array.append_empty,
-    Array.flatMap_singleton_eq_map]
+    ArrayUtil.flatMap_singleton_eq_map]
 
 @[simp] def ofFn {n : Nat} (f : Fin (n + 1) → α) : NonEmptyArray α :=
   ⟨f ⟨0, by omega⟩, Array.ofFn (fun (i : Fin n) => f ⟨i.val + 1, by omega⟩)⟩
@@ -548,6 +575,28 @@ def allM [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m Bool := xs.to
 def findM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option α) := xs.toArr.findM? p
 def findSomeM? [Monad m] {β} (f : α → m (Option β)) (xs : NonEmptyArray α) : m (Option β) := xs.toArr.findSomeM? f
 def findIdxM? [Monad m] (p : α → m Bool) (xs : NonEmptyArray α) : m (Option Nat) := xs.toArr.findIdxM? p
+
+/--
+Maps each element of the non-empty array to `ω`, and combines them using the
+provided binary operation `op`.
+Because the array is non-empty, no initial `mempty` or `init` value is required.
+-/
+@[simp, inline]
+def foldMap {α ω} (op : ω → ω → ω) (f : α → ω) (as : NonEmptyArray α) : ω :=
+  as.tail.foldl (fun acc x => op acc (f x)) (f as.head)
+
+/--
+Map each element of a structure to an action, evaluate these actions from
+left to right, and collect the results. For Applicative functors.
+-/
+@[simp, inline]
+def traverse {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
+  (NonEmptyArray.mk · ·) <$> f as.head <*> NonEmpty.ArrayUtil.traverse f as.tail
+
+/-- Evaluate each action in the structure from left to right, and collect the results. -/
+@[simp, inline]
+def sequence {m : Type u → Type v} [Applicative m] {α : Type u} (as : NonEmptyArray (m α)) : m (NonEmptyArray α) :=
+  as.traverse id
 
 instance : Append (NonEmptyArray α) := ⟨append⟩
 instance : HAppend (NonEmptyArray α) (Array α) (NonEmptyArray α) := ⟨appendArray⟩
@@ -860,12 +909,12 @@ instance : LawfulApplicative NonEmptyArray where
     apply NonEmptyArray.ext
     · simp only [Seq.seq, NonEmptyArray.seq, pure, NonEmptyArray.singleton, Functor.map,
       List.map_toArray, List.map_nil, Array.mapNonEmptyArray, NonEmptyArray.toArr,
-      Array.append_empty, Array.flatMap_singleton_eq_map, Array.append_eq_append,
+      Array.append_empty, NonEmpty.ArrayUtil.flatMap_singleton_eq_map, Array.append_eq_append,
       Array.empty_append, NonEmptyArray.map]
     · obtain ⟨g, gt⟩ := f
       simp only [Seq.seq, NonEmptyArray.seq, pure, NonEmptyArray.singleton, Functor.map,
         List.map_toArray, List.map_nil, Array.mapNonEmptyArray, NonEmptyArray.toArr,
-        Array.append_empty, Array.flatMap_singleton_eq_map, Array.append_eq_append,
+        Array.append_empty, NonEmpty.ArrayUtil.flatMap_singleton_eq_map, Array.append_eq_append,
         Array.empty_append, NonEmptyArray.map]
 
   seq_assoc x g f := by
@@ -882,7 +931,7 @@ instance : LawfulApplicative NonEmptyArray where
       cases xt with | mk l =>
       induction l generalizing gh gt fh ft
       · simp only [Function.comp_def, List.map_toArray, List.map_nil, Array.append_empty,
-        Array.flatMap_singleton_eq_map, Array.map_map, Array.empty_append, Array.flatMap_map,
+        NonEmpty.ArrayUtil.flatMap_singleton_eq_map, Array.map_map, Array.empty_append, Array.flatMap_map,
         Function.comp_apply, Array.flatMap_assoc, Array.flatMap_append, List.flatMap_toArray,
         List.flatMap_cons, List.flatMap_nil, List.append_nil]
       · rename_i a as ih
@@ -921,7 +970,7 @@ instance : LawfulMonad NonEmptyArray where
     · obtain ⟨xh, xt⟩ := x
       simp only [bind, NonEmptyArray.flatten, pure, NonEmptyArray.singleton, Array.mapNonEmptyArray,
         NonEmptyArray.toArr, id_eq, Array.flatMap_map, Array.append_empty,
-        Array.flatMap_singleton_eq_map, Array.empty_append, NonEmptyArray.map_tail]
+        NonEmpty.ArrayUtil.flatMap_singleton_eq_map, Array.empty_append, NonEmptyArray.map_tail]
 
   bind_map f x := by
     apply NonEmptyArray.ext
