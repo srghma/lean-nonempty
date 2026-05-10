@@ -164,8 +164,37 @@ instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) whe
   let ⟨h, t⟩ := xs
   ⟨h.head, h.tail ++ t.mapNonEmptyArray id⟩
 
-@[simp] def foldl {β : Type} (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
-  xs.tail.foldl f (f init xs.head)
+-- @[simp] def foldl {β : Type} (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
+--   xs.tail.foldl f (f init xs.head)
+
+@[inline]
+def foldlM1 [Monad m] (f : β → α → m β) (g : α → m β) (as : NonEmptyArray α) : m β := do
+  as.tail.foldlM f (← g as.head)
+
+def foldrM1 [Monad m] (f : α → β → m β) (g : α → m β) (as : NonEmptyArray α) : m β := do
+  let sz := as.tail.size
+  if h : 0 < sz then
+    -- Use the last element of the tail as the initial seed.
+    -- .back h is a safe way to get as.tail[sz-1]
+    let init ← g (as.tail.back h)
+    -- foldrM with start := sz - 1 begins folding from index sz - 2 down to 0.
+    let accumulated ← as.tail.foldrM f init (start := sz - 1)
+    -- Combine the result with the head
+    f as.head accumulated
+  else
+    -- Tail is empty, just transform the head
+    g as.head
+
+@[simp, inline] def foldl1 (f : b -> a -> b) (g : a -> b) (as : NonEmptyArray a) : b :=
+  as.tail.foldl f (g as.head)
+
+/--
+Pure right fold for non-empty arrays.
+`foldr1 f g [a, b, c]` is `f a (f b (g c))`
+-/
+@[inline]
+def foldr1 (f : α → β → β) (g : α → β) (as : NonEmptyArray α) : β :=
+  Id.run <| as.foldrM1 (fun a b => pure (f a b)) (fun a => pure (g a))
 
 @[simp] def mapM [Applicative m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
   (NonEmptyArray.mk · ·) <$> f as.head <*> as.tail.foldl (fun macc x => (·.push ·) <$> macc <*> f x) (pure #[])
