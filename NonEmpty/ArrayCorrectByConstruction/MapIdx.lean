@@ -1,9 +1,9 @@
 
 module
 
-import all NonEmpty.CorrectByConstruction.Array.Basic
+import all NonEmpty.ArrayCorrectByConstruction.Basic
 
-namespace NonEmpty.CorrectByConstruction.Array
+namespace NonEmpty.ArrayCorrectByConstruction
 
 open NonEmptyArray
 
@@ -855,4 +855,4 @@ theorem toList_mapIdxM [Monad m] [LawfulMonad m] {f : Nat → α → m β} {as :
   rw [← eq1]
   simp only [bind_pure_comp, Functor.map_map]
 
-end NonEmpty.CorrectByConstruction.Array
+end NonEmpty.ArrayCorrectByConstruction

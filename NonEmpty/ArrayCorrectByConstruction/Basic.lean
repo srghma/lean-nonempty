@@ -5,7 +5,7 @@ public import NonEmpty.ArrayUtil
 @[expose] public section
 
 -- why this is needed? for https://github.com/leanprover/lean4/issues/4964#issuecomment-4337841019
-namespace NonEmpty.CorrectByConstruction.Array
+namespace NonEmpty.ArrayCorrectByConstruction
 
 @[ext]
 structure NonEmptyArray (α : Type u) where
@@ -971,4 +971,4 @@ example : NonEmptyArray Nat := #![10]
 
 end
 
-end NonEmpty.CorrectByConstruction.Array
+end NonEmpty.ArrayCorrectByConstruction

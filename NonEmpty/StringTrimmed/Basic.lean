@@ -1,13 +1,14 @@
 module
 
 public import NonEmpty.String
+public meta import NonEmpty.String.Basic
 import all NonEmpty.String
-public import NonEmpty.String.Trimmed.Theorems
-import all NonEmpty.String.Trimmed.Theorems
+public import NonEmpty.StringTrimmed.Theorems
+import all NonEmpty.StringTrimmed.Theorems
 open NonEmpty.String
 
 public section
-namespace NonEmpty.String.Trimmed
+namespace NonEmpty.StringTrimmed
 
 structure NonEmptyStringTrimmed extends NonEmptyString where
   hasNoWhitespaceAtStart : toString.startsWith Char.isWhitespace = false
@@ -145,4 +146,4 @@ error: There are whitespace at end
 #guard (nest!"world").toString == "world"
 #guard (nest!"a").toString == "a"
 
-end NonEmpty.String.Trimmed
+end NonEmpty.StringTrimmed

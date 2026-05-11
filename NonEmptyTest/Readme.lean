@@ -4,14 +4,14 @@ import all NonEmpty.Array
 import all NonEmpty.List
 import all NonEmpty.String
 import all NonEmpty.StringSlice
-import all NonEmpty.String.Trimmed
-import all NonEmpty.CorrectByConstruction.Array
-public meta import NonEmpty.CorrectByConstruction.Array.Basic
+import all NonEmpty.StringTrimmed
+import all NonEmpty.ArrayCorrectByConstruction
+public meta import NonEmpty.ArrayCorrectByConstruction.Basic
 
 section
 open NonEmpty.String
 open NonEmpty.StringSlice
-open NonEmpty.String.Trimmed
+open NonEmpty.StringTrimmed
 open NonEmpty.Array
 open NonEmpty.List
 
@@ -42,7 +42,7 @@ def ex3 : NonEmptyString := nes!"lean"
 
 
 -- === NonEmptyStringSlice ===
-def ex3b : NonEmpty.StringSlice.NonEmptyStringSlice := 
+def ex3b : NonEmpty.StringSlice.NonEmptyStringSlice :=
   match NonEmpty.StringSlice.NonEmptyStringSlice.fromString? "lean" with
   | some s => s
   | none => NonEmpty.StringSlice.NonEmptyStringSlice.mk "x".toSlice (by simp)
@@ -71,7 +71,7 @@ end section
 
 section
 
-open NonEmpty.CorrectByConstruction.Array
+open NonEmpty.ArrayCorrectByConstruction
 
 def a : NonEmptyArray Nat := #![1, 2, 3]
 def b : NonEmptyArray Nat := #![10]

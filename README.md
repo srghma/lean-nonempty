@@ -60,7 +60,7 @@ Then import in your project:
 import NonEmpty.Array
 import NonEmpty.List
 import NonEmpty.String
-import NonEmpty.String.Trimmed
+import NonEmpty.StringTrimmed
 ```
 
 ---
@@ -102,8 +102,8 @@ Safe conversion from a standard array:
 This version of `NonEmptyArray` is defined structurally (as a head and a tail), making it natively non-empty without needing an explicit proof.
 
 ```lean
-import NonEmpty.CorrectByConstruction.Array
-open NonEmpty.CorrectByConstruction.Array
+import NonEmpty.ArrayCorrectByConstruction
+open NonEmpty.ArrayCorrectByConstruction
 
 def exCbC : NonEmptyArray Nat := #![1, 2, 3]
 
@@ -170,8 +170,8 @@ Safe conversion:
 ### NonEmptyStringTrimmed ✂️
 
 ```lean
-import NonEmpty.String.Trimmed
-open NonEmpty.String.Trimmed
+import NonEmpty.StringTrimmed
+open NonEmpty.StringTrimmed
 
 -- Automatically trims whitespace
 def exTrim : NonEmptyStringTrimmed := nest_trim!"  Hello World  "
