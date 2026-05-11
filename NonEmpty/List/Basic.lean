@@ -51,7 +51,7 @@ abbrev length (xs : NonEmptyList α) : Nat := xs.toList.length
 
 abbrev get (xs : NonEmptyList α) (i : Fin xs.length) : α := xs.toList.get i
 
-abbrev map {β : Type} (f : α → β) (xs : NonEmptyList α) : NonEmptyList β := ⟨xs.toList.map f, by
+abbrev map (f : α → β) (xs : NonEmptyList α) : NonEmptyList β := ⟨xs.toList.map f, by
   simp only [List.length_map, gt_iff_lt];
   exact xs.isNonEmpty
   ⟩
@@ -66,8 +66,7 @@ abbrev append (nel1 nel2 : NonEmptyList α) : NonEmptyList α := ⟨nel1.toList 
 --   let allInits := xs.toList.inits.drop 1  -- drop the initial empty list
 --   fromList! (allInits.map fromList!)
 
--- theorem mapM_length {m : Type 0 → Type 0} [Monad m] {α : Type 0} {β : Type 0}
---     (f : α → m β) (as : List α) :
+-- theorem mapM_length [Monad m] --     (f : α → m β) (as : List α) :
 --     Functor.map (fun xs => xs.length) (List.mapM f as) = Pure.pure (List.length as) := by
 
 abbrev mapM [Monad m] [Inhabited β] (f : α → m β) (as : NonEmptyList α) : m (NonEmptyList β) :=

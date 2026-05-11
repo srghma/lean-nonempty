@@ -138,7 +138,7 @@ instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) whe
   ⟨h.head, h.tail ++ t.mapNonEmptyArray id⟩
 
 -- not needed ever
--- @[simp] def foldl {β : Type} (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
+-- @[simp] def foldl (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
 --   xs.tail.foldl f (f init xs.head)
 
 @[inline]
@@ -537,12 +537,12 @@ Map each element of a structure to an action, evaluate these actions from
 left to right, and collect the results. For Applicative functors.
 -/
 @[simp, inline]
-def mapA {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
+def mapA [Applicative m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
   (NonEmptyArray.mk · ·) <$> f as.head <*> NonEmpty.ArrayUtil.mapA f as.tail
 
 /-- Evaluate each action in the structure from left to right, and collect the results. -/
 @[simp, inline]
-def sequence {m : Type u → Type v} [Applicative m] {α : Type u} (as : NonEmptyArray (m α)) : m (NonEmptyArray α) :=
+def sequence [Applicative m] (as : NonEmptyArray (m α)) : m (NonEmptyArray α) :=
   as.mapA id
 
 instance : Append (NonEmptyArray α) := ⟨append⟩
@@ -618,7 +618,7 @@ instance : Membership α (NonEmptyArray α) where
   simp only [Array.toList_append]
   rfl
 
-@[simp] def forInImpl {m : Type u → Type v} [Monad m] {β : Type u} (xs : NonEmptyArray α) (init : β) (f : α → β → m (ForInStep β)) : m β :=
+@[simp] def forInImpl [Monad m] (xs : NonEmptyArray α) (init : β) (f : α → β → m (ForInStep β)) : m β :=
   forIn xs.toArr init f
 
 instance [Monad m] : ForIn m (NonEmptyArray α) α where
@@ -646,7 +646,7 @@ theorem mem_iff_exists_getElem {a : α} {as : NonEmptyArray α} :
   · rintro ⟨i, h, rfl⟩; exact ⟨⟨i, h⟩, rfl⟩
   · rintro ⟨⟨i, h⟩, rfl⟩; exact ⟨i, h, rfl⟩
 
-def forIn'Impl {m : Type u → Type v} [Monad m] {β : Type u} (xs : NonEmptyArray α) (init : β) (f : (a : α) → a ∈ xs → β → m (ForInStep β)) : m β := forIn' xs.toArr init (fun a h => f a ⟨by
+def forIn'Impl [Monad m] (xs : NonEmptyArray α) (init : β) (f : (a : α) → a ∈ xs → β → m (ForInStep β)) : m β := forIn' xs.toArr init (fun a h => f a ⟨by
     rw [Array.mem_def, toArr_toList] at h
     exact h
   ⟩)
@@ -662,12 +662,12 @@ instance : Functor NonEmptyArray where
 namespace NonEmptyArray
 
 
-@[simp] theorem id_map {α : Type u} (x : NonEmptyArray α) : id <$> x = x := by
+@[simp] theorem id_map (x : NonEmptyArray α) : id <$> x = x := by
   ext <;> simp only [Functor.map, map, id_eq, Array.map_id_fun]
 
-@[simp] theorem map_id {α : Type u} (as : NonEmptyArray α) : map id as = as := id_map as
+@[simp] theorem map_id (as : NonEmptyArray α) : map id as = as := id_map as
 
-@[simp] theorem comp_map {α β γ : Type u} (g : α → β) (h : β → γ) (x : NonEmptyArray α) : (h ∘ g) <$> x = h <$> g <$> x := by
+@[simp] theorem comp_map (g : α → β) (h : β → γ) (x : NonEmptyArray α) : (h ∘ g) <$> x = h <$> g <$> x := by
   ext <;> simp only [Functor.map, map, Function.comp_apply, _root_.Array.map_map]
 
 @[simp] theorem map_comp {α β γ : Type u} (g : α → β) (h : β → γ) (as : NonEmptyArray α) : map (h ∘ g) as = map h (map g as) := comp_map g h as
@@ -749,10 +749,10 @@ Helper lemmas
     simp only [getElem]
     simp_all only [Array.getInternal_eq_getElem, Array.getElem_map, Array.getElem_attach]
 
-@[simp] theorem attach_map {α β : Type} (as : NonEmptyArray α) (f : α → β) : as.attach.map (fun x => f x.val) = as.map f := by
+@[simp] theorem attach_map (as : NonEmptyArray α) (f : α → β) : as.attach.map (fun x => f x.val) = as.map f := by
   ext <;> simp
 
-@[simp] theorem attach_map_val {α : Type} (as : NonEmptyArray α) : as.attach.map (fun x => x.val) = as := by
+@[simp] theorem attach_map_val (as : NonEmptyArray α) : as.attach.map (fun x => x.val) = as := by
   simp_all only [map, attach, Array.map_map, Function.comp_apply, Array.map_subtype, Array.unattach_attach,
     Array.map_id_fun', id_eq]
 
@@ -824,7 +824,7 @@ Helper lemmas
     change sizeOf a < sizeOf tl at step
     omega
 
-@[simp] theorem sizeOf_attach_elem {α : Type} [SizeOf α] (as : NonEmptyArray α) (x : { x // x ∈ as }) : sizeOf x.val < sizeOf as :=
+@[simp] theorem sizeOf_attach_elem [SizeOf α] (as : NonEmptyArray α) (x : { x // x ∈ as }) : sizeOf x.val < sizeOf as :=
   sizeOf_lt_of_mem x.property
 
 @[simp] theorem sizeOf_head [SizeOf α] (as : NonEmptyArray α) : sizeOf as.head < sizeOf as := by
