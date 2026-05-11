@@ -170,25 +170,14 @@ Pure right fold for non-empty arrays.
 def foldr1 (f : α → β → β) (g : α → β) (as : NonEmptyArray α) : β :=
   Id.run <| as.foldrM1 (fun a b => pure (f a b)) (fun a => pure (g a))
 
-@[simp] def mapM [Applicative m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
-  (NonEmptyArray.mk · ·) <$> f as.head <*> as.tail.foldl (fun macc x => (·.push ·) <$> macc <*> f x) (pure #[])
+@[simp] def mapM [Monad m] (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) := do
+  return ⟨← f as.head, ← as.tail.mapM f⟩
 
 def mapM' [Monad m] (f : α → m β) (as : NonEmptyArray α) :
     m { bs : NonEmptyArray β // bs.size = as.size } := do
-  let b0 ← f as.head
   let tail ← as.tail.mapM' f
-  -- Assuming your environment has a way to relate the result of mapM to the input size
-  -- If not, you must prove this property for your specific 'mapM'
-  let bs : NonEmptyArray β := ⟨b0, tail⟩
-
-  -- We need to prove bs.size = as.size, which is 1 + tail.size = 1 + as.tail.size
-  -- This requires: tail.size = as.tail.size
-  -- If your mapM implementation doesn't provide this, you cannot use 'pure'
-  -- unless you have an axiom or a theorem for your specific f.
-
-  -- Assuming you have a proof/lemma named 'size_mapM'
-  pure ⟨bs, by
-    simp_all only [size, Nat.add_left_cancel_iff, bs]
+  return ⟨⟨← f as.head, tail⟩, by
+    simp_all only [size, Nat.add_left_cancel_iff]
     obtain ⟨val, property⟩ := tail
     simp_all only
   ⟩
