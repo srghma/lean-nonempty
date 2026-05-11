@@ -40,12 +40,12 @@ Map each element of a structure to an action, evaluate these actions from
 left to right, and collect the results. For Applicative functors.
 -/
 @[simp, inline]
-def traverse {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : Array α) : m (Array β) :=
+def mapA {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : Array α) : m (Array β) :=
   as.foldl (fun macc x => (fun acc y => acc.push y) <$> macc <*> f x) (pure (Array.emptyWithCapacity as.size))
 
 /-- Evaluate each action in the structure from left to right, and collect the results. -/
 @[simp, inline]
 def sequence {m : Type u → Type v} [Applicative m] {α : Type u} (as : Array (m α)) : m (Array α) :=
-  ArrayUtil.traverse id as
+  mapA id as
 
 end NonEmpty.ArrayUtil

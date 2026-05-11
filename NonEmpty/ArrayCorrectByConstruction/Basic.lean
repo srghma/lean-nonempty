@@ -137,6 +137,7 @@ instance : LawfulGetElem (NonEmptyArray α) Nat α (fun as i => i < as.size) whe
   let ⟨h, t⟩ := xs
   ⟨h.head, h.tail ++ t.mapNonEmptyArray id⟩
 
+-- not needed ever
 -- @[simp] def foldl {β : Type} (f : β → α → β) (init : β) (xs : NonEmptyArray α) : β :=
 --   xs.tail.foldl f (f init xs.head)
 
@@ -536,13 +537,13 @@ Map each element of a structure to an action, evaluate these actions from
 left to right, and collect the results. For Applicative functors.
 -/
 @[simp, inline]
-def traverse {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
-  (NonEmptyArray.mk · ·) <$> f as.head <*> NonEmpty.ArrayUtil.traverse f as.tail
+def mapA {m : Type u → Type v} [Applicative m] {α : Type w} {β : Type u} (f : α → m β) (as : NonEmptyArray α) : m (NonEmptyArray β) :=
+  (NonEmptyArray.mk · ·) <$> f as.head <*> NonEmpty.ArrayUtil.mapA f as.tail
 
 /-- Evaluate each action in the structure from left to right, and collect the results. -/
 @[simp, inline]
 def sequence {m : Type u → Type v} [Applicative m] {α : Type u} (as : NonEmptyArray (m α)) : m (NonEmptyArray α) :=
-  as.traverse id
+  as.mapA id
 
 instance : Append (NonEmptyArray α) := ⟨append⟩
 instance : HAppend (NonEmptyArray α) (Array α) (NonEmptyArray α) := ⟨appendArray⟩
