@@ -13,6 +13,10 @@ namespace NonEmpty.StringTrimmed
 structure NonEmptyStringTrimmed extends NonEmptyString where
   hasNoWhitespaceAtStart : toString.startsWith Char.isWhitespace = false
   hasNoWhitespaceAtEnd : toString.endsWith Char.isWhitespace = false
+  deriving DecidableEq, Hashable
+
+instance : BEq NonEmptyStringTrimmed where
+  beq a b := a.toString == b.toString
 
 instance : ToString NonEmptyStringTrimmed where
   toString s := s.toNonEmptyString.toString

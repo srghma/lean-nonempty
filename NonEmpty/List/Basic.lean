@@ -9,9 +9,6 @@ structure NonEmptyList (α : Type u) where
   isNonEmpty : toList.length > 0
   deriving Hashable, Ord, Repr, DecidableEq
 
-instance [BEq α] : BEq (NonEmptyList α) where
-  beq a b := a.toList == b.toList
-
 instance [ToString α] : ToString (NonEmptyList α) where
   toString a := "!" ++ toString a.toList
 

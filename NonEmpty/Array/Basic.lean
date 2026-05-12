@@ -8,9 +8,6 @@ structure NonEmptyArray (α : Type u) where
   isNonEmpty : toArray.size > 0
   deriving Hashable, Ord, Repr, DecidableEq
 
-instance [BEq α] : BEq (NonEmptyArray α) where
-  beq a b := a.toArray == b.toArray
-
 instance [ToString α] : ToString (NonEmptyArray α) where
   toString a := "#!" ++ toString a.toArray
 
