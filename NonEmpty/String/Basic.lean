@@ -49,3 +49,4 @@ macro "nes!" s:str : term => do
 #guard (nes!"world").toString == "world"
 
 end NonEmpty.String
+

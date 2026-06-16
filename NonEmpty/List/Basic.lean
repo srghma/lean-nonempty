@@ -105,3 +105,4 @@ instance : NonEmpty.DowngradeMap NonEmptyList where
   map := NonEmptyList.map
 
 end NonEmpty.List
+
