@@ -4,3 +4,4 @@ prelude
 public import NonEmpty.ArrayCorrectByConstruction.Basic
 public import NonEmpty.ArrayCorrectByConstruction.MapIdx
 public import NonEmpty.ArrayCorrectByConstruction.FromToJson
+public import NonEmpty.ArrayCorrectByConstruction.ToExpr
