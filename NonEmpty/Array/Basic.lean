@@ -1,5 +1,8 @@
 module
 
+public import NonEmpty.List
+public import NonEmpty.DowngradeMap
+
 public section
 namespace NonEmpty.Array
 
@@ -92,5 +95,9 @@ example : NonEmptyArray Nat := #![10]
 @[inline]
 instance : CoeOut (NonEmptyArray α) (Array α) where
   coe xs := xs.toArray
+
+@[inline]
+instance : NonEmpty.DowngradeMap NonEmptyArray where
+  map := NonEmptyArray.map
 
 end

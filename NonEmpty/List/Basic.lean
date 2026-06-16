@@ -1,5 +1,6 @@
 module
 
+public import NonEmpty.DowngradeMap
 
 public section
 namespace NonEmpty.List
@@ -98,5 +99,9 @@ example : NonEmptyList Nat := ![10]
 @[inline]
 instance : CoeOut (NonEmptyList α) (List α) where
   coe xs := xs.toList
+
+@[inline]
+instance : NonEmpty.DowngradeMap NonEmptyList where
+  map := NonEmptyList.map
 
 end NonEmpty.List

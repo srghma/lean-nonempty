@@ -1,6 +1,7 @@
 module
 import Init.Data.Array.Lemmas
 public import NonEmpty.ArrayUtil
+public import NonEmpty.DowngradeMap
 
 @[expose] public section
 
@@ -969,5 +970,9 @@ end
 @[inline]
 instance : CoeOut (NonEmpty.ArrayCorrectByConstruction.NonEmptyArray α) (Array α) where
   coe xs := xs.toArr
+
+@[inline]
+instance : NonEmpty.DowngradeMap NonEmpty.ArrayCorrectByConstruction.NonEmptyArray where
+  map := NonEmpty.ArrayCorrectByConstruction.NonEmptyArray.map
 
 end NonEmpty.ArrayCorrectByConstruction

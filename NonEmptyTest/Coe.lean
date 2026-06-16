@@ -6,7 +6,7 @@ import all NonEmpty.ArrayCorrectByConstruction
 import all NonEmpty.String
 import all NonEmpty.StringSlice
 import all NonEmpty.StringTrimmed
-import all NonEmpty.Coe
+import all NonEmpty.DowngradeMap
 public meta import NonEmpty.List.Basic
 public meta import NonEmpty.Array.Basic
 public meta import NonEmpty.ArrayCorrectByConstruction.Basic
@@ -30,7 +30,7 @@ open NonEmpty.StringSlice
 open NonEmpty.StringTrimmed
 
 -- ============================================================
--- Abbreviations (mirroring the user's example)
+-- Abbreviations
 -- ============================================================
 
 private abbrev L      := List
@@ -39,6 +39,15 @@ private abbrev LS     := List String
 private abbrev NELS   := NonEmptyList String
 private abbrev LNES   := List NonEmptyString
 private abbrev NELNES := NonEmptyList NonEmptyString
+
+private abbrev A      := Array
+private abbrev NEA    := NonEmpty.Array.NonEmptyArray
+private abbrev NEACBC := NonEmpty.ArrayCorrectByConstruction.NonEmptyArray
+
+private abbrev S      := String
+private abbrev NES    := NonEmptyString
+private abbrev NESS   := NonEmptyStringSlice
+private abbrev NEST   := NonEmptyStringTrimmed
 
 -- ============================================================
 -- NonEmptyList → List
@@ -50,25 +59,20 @@ def nels_val : NELS := !["hello", "world"]
 def lnes_val : LNES := [nes!"hello", nes!"world"]
 def nelnes_val : NELNES := ![nes!"hello", nes!"world"]
 
-/-- LNES -> LS -/
-def test_LNES_to_LS : LS := lnes_val
-#guard test_LNES_to_LS = ["hello", "world"]
+-- LNES -> LS
+#guard (lnes_val : LS) = ["hello", "world"]
 
-/-- NELS -> LS -/
-def test_NELS_to_LS : LS := nels_val
-#guard test_NELS_to_LS = ["hello", "world"]
+-- NELS -> LS
+#guard (nels_val : LS) = ["hello", "world"]
 
-/-- NELNES -> LS -/
-def test_NELNES_to_LS : LS := nelnes_val
-#guard test_NELNES_to_LS = ["hello", "world"]
+-- NELNES -> LS
+#guard (nelnes_val : LS) = ["hello", "world"]
 
-/-- NELNES -> LNES -/
-def test_NELNES_to_LNES : LNES := nelnes_val
-#guard test_NELNES_to_LNES = [nes!"hello", nes!"world"]
+-- NELNES -> LNES
+#guard (nelnes_val : LNES) = [nes!"hello", nes!"world"]
 
-/-- NELNES -> NELS -/
-def test_NELNES_to_NELS : NELS := nelnes_val
-#guard test_NELNES_to_NELS.toList = ["hello", "world"]
+-- NELNES -> NELS
+#guard (nelnes_val : NELS).toList = ["hello", "world"]
 
 end NonEmptyListCoe
 
@@ -78,9 +82,9 @@ end NonEmptyListCoe
 
 section NonEmptyArrayCoe
 
-def nea : NonEmpty.Array.NonEmptyArray Nat := #![10, 20, 30]
-def arr_from_nea : Array Nat := nea
-#guard arr_from_nea = #[10, 20, 30]
+def nea_val : NEA Nat := #![10, 20, 30]
+
+#guard (nea_val : A Nat) = #[10, 20, 30]
 
 end NonEmptyArrayCoe
 
@@ -90,9 +94,9 @@ end NonEmptyArrayCoe
 
 section NonEmptyArrayCBCCoe
 
-def nea_cbc : NonEmpty.ArrayCorrectByConstruction.NonEmptyArray Nat := #![1, 2, 3]
-def arr_from_nea_cbc : Array Nat := nea_cbc
-#guard arr_from_nea_cbc = #[1, 2, 3]
+def nea_cbc_val : NEACBC Nat := #![1, 2, 3]
+
+#guard (nea_cbc_val : A Nat) = #[1, 2, 3]
 
 end NonEmptyArrayCBCCoe
 
@@ -102,9 +106,9 @@ end NonEmptyArrayCBCCoe
 
 section NonEmptyStringCoe
 
-def nes_val : NonEmptyString := nes!"lean"
-def str_from_nes : String := nes_val
-#guard str_from_nes = "lean"
+def nes_val : NES := nes!"lean"
+
+#guard (nes_val : S) = "lean"
 
 end NonEmptyStringCoe
 
@@ -114,18 +118,16 @@ end NonEmptyStringCoe
 
 section NonEmptyStringSliceCoe
 
-def nesl : NonEmptyStringSlice :=
+def ness_val : NESS :=
   match NonEmptyStringSlice.fromString? "hello" with
   | some s => s
   | none   => NonEmptyStringSlice.mk "x".toSlice (by simp)
 
-/-- Coerce slice → NonEmptyString -/
-def nes_from_nesl : NonEmptyString := nesl
-#guard nes_from_nesl.toString = "hello"
+-- Coerce slice → NonEmptyString
+#guard (ness_val : NES).toString = "hello"
 
-/-- Coerce slice → String (transitive via CoeTC) -/
-def str_from_nesl : String := (nesl : NonEmptyString)
-#guard str_from_nesl = "hello"
+-- Coerce slice → String (transitive via CoeTC)
+#guard (ness_val : S) = "hello"
 
 end NonEmptyStringSliceCoe
 
@@ -135,18 +137,20 @@ end NonEmptyStringSliceCoe
 
 section NonEmptyStringTrimmedCoe
 
-def nest_val : NonEmptyStringTrimmed := nest_trim!"  trimmed  "
+def nest_val : NEST := nest_trim!"  trimmed  "
 
-/-- Coerce trimmed → slice (new CoeOut in NonEmpty.Coe) -/
-def nesl_from_nest : NonEmptyStringSlice := nest_val
-#guard nesl_from_nest.toString = "trimmed"
+-- Coerce trimmed → slice (new CoeOut in NonEmpty.Coe)
+#guard (nest_val : NESS).toString = "trimmed"
 
-/-- Coerce trimmed → NonEmptyString (existing CoeOut) -/
-def nes_from_nest : NonEmptyString := nest_val
-#guard nes_from_nest.toString = "trimmed"
+-- Coerce trimmed → NonEmptyString (existing CoeOut)
+#guard (nest_val : NES).toString = "trimmed"
 
-/-- Coerce trimmed → String (existing CoeOut) -/
-def str_from_nest : String := nest_val
-#guard str_from_nest = "trimmed"
+-- Coerce trimmed → String (existing CoeOut)
+#guard (nest_val : S) = "trimmed"
 
 end NonEmptyStringTrimmedCoe
+
+-- TODO: though List NonEmptyString and List String are the exact same data structure at runtime, the `map` is still executed. Fix bc it should be a no-op.
+-- set_option trace.compiler.ir.result true
+-- def testMap (xs : NonEmpty.List.NonEmptyList NonEmptyString) : NonEmpty.List.NonEmptyList String :=
+--   ↑xs

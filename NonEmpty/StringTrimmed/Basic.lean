@@ -3,6 +3,7 @@ module
 public import NonEmpty.String
 public meta import NonEmpty.String.Basic
 import all NonEmpty.String
+public import NonEmpty.StringSlice.Basic
 public import NonEmpty.StringTrimmed.Theorems
 import all NonEmpty.StringTrimmed.Theorems
 open NonEmpty.String
@@ -21,9 +22,11 @@ instance : BEq NonEmptyStringTrimmed where
 instance : ToString NonEmptyStringTrimmed where
   toString s := s.toNonEmptyString.toString
 
+@[inline]
 instance : CoeOut NonEmptyStringTrimmed String where
   coe s := s.toNonEmptyString.toString
 
+@[inline]
 instance : CoeOut NonEmptyStringTrimmed NonEmptyString where
   coe s := s.toNonEmptyString
 
@@ -149,5 +152,14 @@ error: There are whitespace at end
 
 #guard (nest!"world").toString == "world"
 #guard (nest!"a").toString == "a"
+
+/-- Coerce `NonEmptyStringTrimmed` to `NonEmptyStringSlice`.
+    The trimmed string is always non-empty. -/
+@[inline]
+instance : CoeOut NonEmptyStringTrimmed NonEmpty.StringSlice.NonEmptyStringSlice where
+  coe s := ⟨s.toString.toSlice, by
+    have h : s.toString ≠ "" := s.toNonEmptyString.isNonEmpty
+    simpa only [String.isEmpty_toSlice, String.isEmpty_eq_false_iff, ne_eq] using h
+  ⟩
 
 end NonEmpty.StringTrimmed
