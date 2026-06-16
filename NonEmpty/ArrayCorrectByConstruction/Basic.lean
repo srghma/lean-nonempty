@@ -325,6 +325,7 @@ def swapAt! (xs : NonEmptyArray α) (i : Nat) (v : α) : α × NonEmptyArray α 
 def fromArray (xs : Array α) (h : xs.size > 0) : NonEmptyArray α :=
   ⟨xs[0]'h, xs.extract 1 xs.size⟩
 
+
 @[simp] theorem toArr_fromArray (xs : Array α) (h : xs.size > 0) :
   (fromArray xs h).toArr = xs := by
   simp only [toArr, fromArray]
