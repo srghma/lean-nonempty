@@ -84,4 +84,13 @@ example : NonEmptyArray Nat := #![10]
 #guard (#![1, 2, 3]).tail = #[2, 3]
 #guard (#![1, 2, 3]).size = 3
 
+-- ============================================================
+-- Coercions (downgraders)
+-- ============================================================
+
+/-- Automatically coerce `NonEmptyArray` to its underlying `Array`. -/
+@[inline]
+instance : CoeOut (NonEmptyArray α) (Array α) where
+  coe xs := xs.toArray
+
 end

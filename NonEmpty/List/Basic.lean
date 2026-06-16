@@ -90,4 +90,13 @@ example : NonEmptyList Nat := ![10]
 #guard ![1, 2, 3].tail = [2, 3] -- Should output [2, 3]
 #guard ![1, 2, 3].length = 3 -- Should output 3
 
+-- ============================================================
+-- Coercions (downgraders)
+-- ============================================================
+
+/-- Automatically coerce any `NonEmptyList` to its underlying `List`. -/
+@[inline]
+instance : CoeOut (NonEmptyList α) (List α) where
+  coe xs := xs.toList
+
 end NonEmpty.List

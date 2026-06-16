@@ -82,6 +82,16 @@ instance : HAppend NonEmptyStringSlice NonEmptyStringSlice NonEmptyStringSlice w
     String.isEmpty_eq_false_iff, ne_eq, String.append_eq_empty_iff, toString_ne_empty, and_self,
     not_false_eq_true]⟩
 
+-- ============================================================
+-- Coercions (downgraders)
+-- ============================================================
+
+/-- Coerce a `NonEmptyStringSlice` to a `NonEmptyString` (via `.toNonEmptyString`).
+    Transitively, `NonEmptyStringSlice → NonEmptyString → String` is also available. -/
+@[inline]
+instance : CoeOut NonEmptyStringSlice NonEmpty.String.NonEmptyString where
+  coe s := s.toNonEmptyString
+
 end NonEmptyStringSlice
 
 end NonEmpty.StringSlice

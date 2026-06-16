@@ -961,4 +961,13 @@ example : NonEmptyArray Nat := #![10]
 
 end
 
+-- ============================================================
+-- Coercions (downgraders)
+-- ============================================================
+
+/-- Automatically coerce `NonEmptyArray` (CorrectByConstruction) to its underlying `Array`. -/
+@[inline]
+instance : CoeOut (NonEmpty.ArrayCorrectByConstruction.NonEmptyArray α) (Array α) where
+  coe xs := xs.toArr
+
 end NonEmpty.ArrayCorrectByConstruction
