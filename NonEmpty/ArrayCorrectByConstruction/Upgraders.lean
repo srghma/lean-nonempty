@@ -4,11 +4,13 @@ public import NonEmpty.ArrayCorrectByConstruction.Basic
 public import NonEmpty.String
 public import NonEmpty.StringSlice
 public import NonEmpty.StringTrimmed
+public import NonEmpty.StringTrimmedSlice
 public import NonEmpty.Aliases.FunctorsAndScalars
 
 open NonEmpty.String
 open NonEmpty.StringSlice
 open NonEmpty.StringTrimmed
+open NonEmpty.StringTrimmedSlice
 open NonEmpty.Aliases
 
 public section
@@ -48,6 +50,12 @@ namespace FilterMap
   @[inline] def «NEACBC/S->A/NEST» : «NEACBC/S» → «A/NEST» := («A/S->A/NEST» ·.toArr)
   @[inline] def «NEACBC/S->NEACBC/NEST» : «NEACBC/S» → Option «NEACBC/NEST» := λ xs => NonEmptyArray.fromArray? («A/S->A/NEST» xs.toArr)
 
+  -- To NESTS
+  @[inline] def «A/S->A/NESTS» : «A/S» → «A/NESTS» := (·.filterMap NonEmptyStringTrimmedSlice.fromString?)
+  @[inline] def «A/S->NEACBC/NESTS» : «A/S» → Option «NEACBC/NESTS» := λ xs => NonEmptyArray.fromArray? («A/S->A/NESTS» xs)
+  @[inline] def «NEACBC/S->A/NESTS» : «NEACBC/S» → «A/NESTS» := («A/S->A/NESTS» ·.toArr)
+  @[inline] def «NEACBC/S->NEACBC/NESTS» : «NEACBC/S» → Option «NEACBC/NESTS» := λ xs => NonEmptyArray.fromArray? («A/S->A/NESTS» xs.toArr)
+
 end FilterMap
 
 -- ==============================================================================
@@ -73,6 +81,12 @@ namespace Traverse
   @[inline] def «A/S->NEACBC/NEST» : «A/S» → Option «NEACBC/NEST» := NonEmptyArray.fromArray? <=< «A/S->A/NEST»
   @[inline] def «NEACBC/S->A/NEST» : «NEACBC/S» → Option «A/NEST» := («A/S->A/NEST» ·.toArr)
   @[inline] def «NEACBC/S->NEACBC/NEST» : «NEACBC/S» → Option «NEACBC/NEST» := («A/S->NEACBC/NEST» ·.toArr)
+
+  -- To NESTS
+  @[inline] def «A/S->A/NESTS» : «A/S» → Option «A/NESTS» := Array.mapM NonEmptyStringTrimmedSlice.fromString?
+  @[inline] def «A/S->NEACBC/NESTS» : «A/S» → Option «NEACBC/NESTS» := NonEmptyArray.fromArray? <=< «A/S->A/NESTS»
+  @[inline] def «NEACBC/S->A/NESTS» : «NEACBC/S» → Option «A/NESTS» := («A/S->A/NESTS» ·.toArr)
+  @[inline] def «NEACBC/S->NEACBC/NESTS» : «NEACBC/S» → Option «NEACBC/NESTS» := («A/S->NEACBC/NESTS» ·.toArr)
 
 end Traverse
 

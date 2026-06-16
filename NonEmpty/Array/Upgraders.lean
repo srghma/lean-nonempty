@@ -4,11 +4,13 @@ public import NonEmpty.Array
 public import NonEmpty.String
 public import NonEmpty.StringSlice
 public import NonEmpty.StringTrimmed
+public import NonEmpty.StringTrimmedSlice
 public import NonEmpty.Aliases.FunctorsAndScalars
 
 open NonEmpty.String
 open NonEmpty.StringSlice
 open NonEmpty.StringTrimmed
+open NonEmpty.StringTrimmedSlice
 open NonEmpty.Aliases
 
 public section
@@ -23,6 +25,7 @@ namespace NonEmpty.Array
 @[inline] def «A/NES->NEA/S» : «A/NES» → Option «NEA/S» := λ xs => NonEmptyArray.fromArray? (xs.map (·.toString))
 @[inline] def «A/NESS->NEA/S» : «A/NESS» → Option «NEA/S» := λ xs => NonEmptyArray.fromArray? (xs.map (·.toString))
 @[inline] def «A/NEST->NEA/S» : «A/NEST» → Option «NEA/S» := λ xs => NonEmptyArray.fromArray? (xs.map (·.toString))
+@[inline] def «A/NESTS->NEA/S» : «A/NESTS» → Option «NEA/S» := λ xs => NonEmptyArray.fromArray? (xs.map (·.toString))
 
 -- ==============================================================================
 -- 2. Lax Upgrades (FilterMap) - drop elements that fail the check
@@ -47,6 +50,12 @@ namespace FilterMap
   @[inline] def «A/S->NEA/NEST» : «A/S» → Option «NEA/NEST» := λ xs => NonEmptyArray.fromArray? («A/S->A/NEST» xs)
   @[inline] def «NEA/S->A/NEST» : «NEA/S» → «A/NEST» := («A/S->A/NEST» ·.toArray)
   @[inline] def «NEA/S->NEA/NEST» : «NEA/S» → Option «NEA/NEST» := λ xs => NonEmptyArray.fromArray? («A/S->A/NEST» xs.toArray)
+
+  -- To NESTS
+  @[inline] def «A/S->A/NESTS» : «A/S» → «A/NESTS» := (·.filterMap NonEmptyStringTrimmedSlice.fromString?)
+  @[inline] def «A/S->NEA/NESTS» : «A/S» → Option «NEA/NESTS» := λ xs => NonEmptyArray.fromArray? («A/S->A/NESTS» xs)
+  @[inline] def «NEA/S->A/NESTS» : «NEA/S» → «A/NESTS» := («A/S->A/NESTS» ·.toArray)
+  @[inline] def «NEA/S->NEA/NESTS» : «NEA/S» → Option «NEA/NESTS» := λ xs => NonEmptyArray.fromArray? («A/S->A/NESTS» xs.toArray)
 
 end FilterMap
 
@@ -73,6 +82,12 @@ namespace Traverse
   @[inline] def «A/S->NEA/NEST» : «A/S» → Option «NEA/NEST» := NonEmptyArray.fromArray? <=< «A/S->A/NEST»
   @[inline] def «NEA/S->A/NEST» : «NEA/S» → Option «A/NEST» := («A/S->A/NEST» ·.toArray)
   @[inline] def «NEA/S->NEA/NEST» : «NEA/S» → Option «NEA/NEST» := («A/S->NEA/NEST» ·.toArray)
+
+  -- To NESTS
+  @[inline] def «A/S->A/NESTS» : «A/S» → Option «A/NESTS» := Array.mapM NonEmptyStringTrimmedSlice.fromString?
+  @[inline] def «A/S->NEA/NESTS» : «A/S» → Option «NEA/NESTS» := NonEmptyArray.fromArray? <=< «A/S->A/NESTS»
+  @[inline] def «NEA/S->A/NESTS» : «NEA/S» → Option «A/NESTS» := («A/S->A/NESTS» ·.toArray)
+  @[inline] def «NEA/S->NEA/NESTS» : «NEA/S» → Option «NEA/NESTS» := («A/S->NEA/NESTS» ·.toArray)
 
 end Traverse
 

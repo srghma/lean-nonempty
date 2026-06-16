@@ -9,6 +9,14 @@ public import NonEmpty.Aliases.FunctorsAndScalars
 public section
 namespace NonEmpty.Conversions
 
+/-
+NEL <-> NEA <-> NEACBC
+which is a triangle
+and under this triangle we have L <-> A
+so it becomes a weird prism where bottom has only 2 verteces
+all of them should be connected (minus already connected)
+-/
+
 open NonEmpty.Aliases
 
 -- ==============================================================================

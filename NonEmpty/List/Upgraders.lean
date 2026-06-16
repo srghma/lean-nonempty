@@ -4,11 +4,13 @@ public import NonEmpty.List
 public import NonEmpty.String
 public import NonEmpty.StringSlice
 public import NonEmpty.StringTrimmed
+public import NonEmpty.StringTrimmedSlice
 public import NonEmpty.Aliases.FunctorsAndScalars
 
 open NonEmpty.String
 open NonEmpty.StringSlice
 open NonEmpty.StringTrimmed
+open NonEmpty.StringTrimmedSlice
 open NonEmpty.Aliases
 
 public section
@@ -23,6 +25,7 @@ namespace NonEmpty.List
 @[inline] def «L/NES->NEL/S» : «L/NES» → Option «NEL/S» := λ xs => NonEmptyList.fromList? (xs.map (·.toString))
 @[inline] def «L/NESS->NEL/S» : «L/NESS» → Option «NEL/S» := λ xs => NonEmptyList.fromList? (xs.map (·.toString))
 @[inline] def «L/NEST->NEL/S» : «L/NEST» → Option «NEL/S» := λ xs => NonEmptyList.fromList? (xs.map (·.toString))
+@[inline] def «L/NESTS->NEL/S» : «L/NESTS» → Option «NEL/S» := λ xs => NonEmptyList.fromList? (xs.map (·.toString))
 
 -- ==============================================================================
 -- 2. Lax Upgrades (FilterMap) - drop elements that fail the check
@@ -47,6 +50,12 @@ namespace FilterMap
   @[inline] def «L/S->NEL/NEST» : «L/S» → Option «NEL/NEST» := λ xs => NonEmptyList.fromList? («L/S->L/NEST» xs)
   @[inline] def «NEL/S->L/NEST» : «NEL/S» → «L/NEST» := («L/S->L/NEST» ·.toList)
   @[inline] def «NEL/S->NEL/NEST» : «NEL/S» → Option «NEL/NEST» := λ xs => NonEmptyList.fromList? («L/S->L/NEST» xs.toList)
+
+  -- To NESTS
+  @[inline] def «L/S->L/NESTS» : «L/S» → «L/NESTS» := (·.filterMap NonEmptyStringTrimmedSlice.fromString?)
+  @[inline] def «L/S->NEL/NESTS» : «L/S» → Option «NEL/NESTS» := λ xs => NonEmptyList.fromList? («L/S->L/NESTS» xs)
+  @[inline] def «NEL/S->L/NESTS» : «NEL/S» → «L/NESTS» := («L/S->L/NESTS» ·.toList)
+  @[inline] def «NEL/S->NEL/NESTS» : «NEL/S» → Option «NEL/NESTS» := λ xs => NonEmptyList.fromList? («L/S->L/NESTS» xs.toList)
 
 end FilterMap
 
@@ -73,6 +82,12 @@ namespace Traverse
   @[inline] def «L/S->NEL/NEST» : «L/S» → Option «NEL/NEST» := NonEmptyList.fromList? <=< «L/S->L/NEST»
   @[inline] def «NEL/S->L/NEST» : «NEL/S» → Option «L/NEST» := («L/S->L/NEST» ·.toList)
   @[inline] def «NEL/S->NEL/NEST» : «NEL/S» → Option «NEL/NEST» := («L/S->NEL/NEST» ·.toList)
+
+  -- To NESTS
+  @[inline] def «L/S->L/NESTS» : «L/S» → Option «L/NESTS» := List.mapM NonEmptyStringTrimmedSlice.fromString?
+  @[inline] def «L/S->NEL/NESTS» : «L/S» → Option «NEL/NESTS» := NonEmptyList.fromList? <=< «L/S->L/NESTS»
+  @[inline] def «NEL/S->L/NESTS» : «NEL/S» → Option «L/NESTS» := («L/S->L/NESTS» ·.toList)
+  @[inline] def «NEL/S->NEL/NESTS» : «NEL/S» → Option «NEL/NESTS» := («L/S->NEL/NESTS» ·.toList)
 
 end Traverse
 
