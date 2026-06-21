@@ -8,7 +8,7 @@ namespace NonEmpty.Array
 
 structure NonEmptyArray (α : Type u) where
   toArray : Array α
-  isNonEmpty : toArray.size > 0
+  isNonEmpty : toArray.size > 0 := by decide
   deriving Hashable, Ord, Repr, DecidableEq
 
 instance [ToString α] : ToString (NonEmptyArray α) where

@@ -15,8 +15,8 @@ public section
 namespace NonEmpty.StringTrimmedSlice
 
 structure NonEmptyStringTrimmedSlice extends NonEmptyStringSlice where
-  hasNoWhitespaceAtStart : toSlice.startsWith Char.isWhitespace = false
-  hasNoWhitespaceAtEnd : toSlice.endsWith Char.isWhitespace = false
+  hasNoWhitespaceAtStart : toSlice.startsWith Char.isWhitespace = false := by decide
+  hasNoWhitespaceAtEnd : toSlice.endsWith Char.isWhitespace = false := by decide
   deriving Hashable
 
 instance : BEq NonEmptyStringTrimmedSlice where

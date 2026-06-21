@@ -15,7 +15,7 @@ Despite the historical name, this intentionally wraps `String.Slice`, not `Subst
 -/
 structure NonEmptyStringSlice where
   toSlice : String.Slice
-  isNonEmpty : toSlice.isEmpty = false
+  isNonEmpty : toSlice.isEmpty = false := by decide
 
 instance : CoeOut NonEmptyStringSlice String.Slice where
   coe s := s.toSlice

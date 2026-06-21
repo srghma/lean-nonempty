@@ -5,7 +5,7 @@ namespace NonEmpty.String
 
 structure NonEmptyString where
   toString : String
-  isNonEmpty : toString ≠ ""
+  isNonEmpty : toString ≠ "" := by decide
   deriving BEq, Hashable, Ord, Repr, DecidableEq
 
 instance : CoeOut NonEmptyString String where
@@ -49,4 +49,3 @@ macro "nes!" s:str : term => do
 #guard (nes!"world").toString == "world"
 
 end NonEmpty.String
-

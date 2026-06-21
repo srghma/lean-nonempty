@@ -7,7 +7,7 @@ namespace NonEmpty.List
 
 structure NonEmptyList (α : Type u) where
   toList : List α
-  isNonEmpty : toList.length > 0
+  isNonEmpty : toList.length > 0 := by decide
   deriving Hashable, Ord, Repr, DecidableEq
 
 instance [ToString α] : ToString (NonEmptyList α) where
@@ -105,4 +105,3 @@ instance : NonEmpty.DowngradeMap NonEmptyList where
   map := NonEmptyList.map
 
 end NonEmpty.List
-
