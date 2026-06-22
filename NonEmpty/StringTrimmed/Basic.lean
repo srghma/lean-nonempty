@@ -22,13 +22,15 @@ instance : BEq NonEmptyStringTrimmed where
 instance : ToString NonEmptyStringTrimmed where
   toString s := s.toNonEmptyString.toString
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmed String where
-  coe s := s.toNonEmptyString.toString
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmed String where
+--   coe s := s.toNonEmptyString.toString
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmed NonEmptyString where
-  coe s := s.toNonEmptyString
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmed NonEmptyString where
+--   coe s := s.toNonEmptyString
 
 instance : Inhabited NonEmptyStringTrimmed where
   default := NonEmptyStringTrimmed.mk (NonEmptyString.mk "Inhabited NonEmptyStringTrimmed" (by decide)) (by decide) (by native_decide)
@@ -78,8 +80,8 @@ def back (s : NonEmptyStringTrimmed) : Char :=
 Concatenate two trimmed strings.
 Since both strings have no whitespace at their boundaries, the result is also trimmed.
 -/
-instance : HAppend NonEmptyStringTrimmed NonEmptyStringTrimmed NonEmptyStringTrimmed where
-  hAppend s1 s2 :=
+instance : Append NonEmptyStringTrimmed where
+  append s1 s2 :=
     { toString := s1.toNonEmptyString.toString ++ s2.toNonEmptyString.toString,
       isNonEmpty := by simp only [ne_eq, String.append_eq_empty_iff,
         NonEmptyString.toString_ne_empty, and_self, not_false_eq_true],
@@ -153,13 +155,14 @@ error: There are whitespace at end
 #guard (nest!"world").toString == "world"
 #guard (nest!"a").toString == "a"
 
-/-- Coerce `NonEmptyStringTrimmed` to `NonEmptyStringSlice`.
-    The trimmed string is always non-empty. -/
-@[inline]
-instance : CoeOut NonEmptyStringTrimmed NonEmpty.StringSlice.NonEmptyStringSlice where
-  coe s := ⟨s.toString.toSlice, by
-    have h : s.toString ≠ "" := s.toNonEmptyString.isNonEmpty
-    simpa only [String.isEmpty_toSlice, String.isEmpty_eq_false_iff, ne_eq] using h
-  ⟩
+-- /-- Coerce `NonEmptyStringTrimmed` to `NonEmptyStringSlice`.
+--     The trimmed string is always non-empty. -/
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmed NonEmpty.StringSlice.NonEmptyStringSlice where
+--   coe s := ⟨s.toString.toSlice, by
+--     have h : s.toString ≠ "" := s.toNonEmptyString.isNonEmpty
+--     simpa only [String.isEmpty_toSlice, String.isEmpty_eq_false_iff, ne_eq] using h
+--   ⟩
 
 end NonEmpty.StringTrimmed

@@ -17,8 +17,9 @@ structure NonEmptyStringSlice where
   toSlice : String.Slice
   isNonEmpty : toSlice.isEmpty = false := by decide
 
-instance : CoeOut NonEmptyStringSlice String.Slice where
-  coe s := s.toSlice
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- instance : CoeOut NonEmptyStringSlice String.Slice where
+--   coe s := s.toSlice
 
 instance : ToString NonEmptyStringSlice where
   toString s := s.toSlice.copy
@@ -77,8 +78,8 @@ instance : HAppend NonEmptyStringSlice String.Slice NonEmptyStringSlice where
     String.isEmpty_eq_false_iff, ne_eq, String.append_eq_empty_iff, toString_ne_empty,
     String.Slice.copy_eq_empty_iff, false_and, not_false_eq_true]⟩
 
-instance : HAppend NonEmptyStringSlice NonEmptyStringSlice NonEmptyStringSlice where
-  hAppend s1 s2 := ⟨(s1.toString ++ s2.toString).toSlice, by simp only [String.isEmpty_toSlice,
+instance : Append NonEmptyStringSlice where
+  append s1 s2 := ⟨(s1.toString ++ s2.toString).toSlice, by simp only [String.isEmpty_toSlice,
     String.isEmpty_eq_false_iff, ne_eq, String.append_eq_empty_iff, toString_ne_empty, and_self,
     not_false_eq_true]⟩
 
@@ -86,11 +87,12 @@ instance : HAppend NonEmptyStringSlice NonEmptyStringSlice NonEmptyStringSlice w
 -- Coercions (downgraders)
 -- ============================================================
 
-/-- Coerce a `NonEmptyStringSlice` to a `NonEmptyString` (via `.toNonEmptyString`).
-    Transitively, `NonEmptyStringSlice → NonEmptyString → String` is also available. -/
-@[inline]
-instance : CoeOut NonEmptyStringSlice NonEmpty.String.NonEmptyString where
-  coe s := s.toNonEmptyString
+-- /-- Coerce a `NonEmptyStringSlice` to a `NonEmptyString` (via `.toNonEmptyString`).
+--     Transitively, `NonEmptyStringSlice → NonEmptyString → String` is also available. -/
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringSlice NonEmpty.String.NonEmptyString where
+--   coe s := s.toNonEmptyString
 
 end NonEmptyStringSlice
 

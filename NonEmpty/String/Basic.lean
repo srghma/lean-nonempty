@@ -8,8 +8,9 @@ structure NonEmptyString where
   isNonEmpty : toString ≠ "" := by decide
   deriving BEq, Hashable, Ord, Repr, DecidableEq
 
-instance : CoeOut NonEmptyString String where
-  coe s := s.toString
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- instance : CoeOut NonEmptyString String where
+--   coe s := s.toString
 
 instance : ToString NonEmptyString where
   toString s := s.toString
@@ -25,6 +26,10 @@ abbrev fromLChar? (cs : List Char) : Option NonEmptyString := fromString? (Strin
 
 @[simp] theorem toString_ne_empty (s : NonEmptyString) : s.toString ≠ "" := s.isNonEmpty
 
+instance : Append NonEmptyString where
+  append s1 s2 := ⟨s1.toString ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
+    toString_ne_empty, and_self, not_false_eq_true]⟩
+
 instance : HAppend String NonEmptyString NonEmptyString where
   hAppend s1 s2 := ⟨s1 ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
     toString_ne_empty, and_false, not_false_eq_true]⟩
@@ -32,10 +37,6 @@ instance : HAppend String NonEmptyString NonEmptyString where
 instance : HAppend NonEmptyString String NonEmptyString where
   hAppend s1 s2 := ⟨s1.toString ++ s2, by simp only [ne_eq, String.append_eq_empty_iff,
     toString_ne_empty, false_and, not_false_eq_true]⟩
-
-instance : HAppend NonEmptyString NonEmptyString NonEmptyString where
-  hAppend s1 s2 := ⟨s1.toString ++ s2.toString, by simp only [ne_eq, String.append_eq_empty_iff,
-    toString_ne_empty, and_self, not_false_eq_true]⟩
 
 end NonEmptyString
 

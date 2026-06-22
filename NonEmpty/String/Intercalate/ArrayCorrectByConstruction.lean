@@ -10,4 +10,4 @@ namespace NonEmpty.String
 open NonEmpty.ArrayCorrectByConstruction
 
 def intercalateArrayCBC (s : String) (xs : NonEmptyArray NonEmptyString) : NonEmptyString :=
-  xs.tail.foldl (fun acc x => HAppend.hAppend (HAppend.hAppend acc s) x) xs.head
+  xs.tail.foldl (fun acc x => acc ++ s ++ x) xs.head

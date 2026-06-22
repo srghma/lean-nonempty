@@ -42,24 +42,33 @@ def toNonEmptyStringTrimmed (s : NonEmptyStringTrimmedSlice) : NonEmptyStringTri
     )
 
 @[inline]
-instance : CoeOut NonEmptyStringTrimmedSlice String.Slice where
-  coe s := s.toSlice
+def toNonEmptyString (s : NonEmptyStringTrimmedSlice) : NonEmpty.String.NonEmptyString :=
+  s.toNonEmptyStringSlice.toNonEmptyString
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyStringSlice where
-  coe s := s.toNonEmptyStringSlice
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmedSlice String.Slice where
+--   coe s := s.toSlice
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmedSlice String where
-  coe s := s.toString
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyStringSlice where
+--   coe s := s.toNonEmptyStringSlice
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyString where
-  coe s := s.toNonEmptyStringSlice.toNonEmptyString
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmedSlice String where
+--   coe s := s.toString
 
-@[inline]
-instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyStringTrimmed where
-  coe s := toNonEmptyStringTrimmed s
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyString where
+--   coe s := s.toNonEmptyString
+
+-- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
+-- @[inline]
+-- instance : CoeOut NonEmptyStringTrimmedSlice NonEmptyStringTrimmed where
+--   coe s := toNonEmptyStringTrimmed s
 
 instance : Inhabited NonEmptyStringTrimmedSlice where
   default := ⟨NonEmptyStringSlice.mk "a".toSlice (by native_decide), by native_decide, by native_decide⟩
