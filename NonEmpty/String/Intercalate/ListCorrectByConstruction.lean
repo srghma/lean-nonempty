@@ -1,9 +1,13 @@
 module
 
-import NonEmpty.String.Basic
-import NonEmpty.ListCorrectByConstruction.Basic
+public import NonEmpty.String.Basic
+public import NonEmpty.ListCorrectByConstruction.Basic
+
+@[expose] public section
 
 namespace NonEmpty.String
 
-def intercalateListCBC (s : String) (xs : NonEmpty.ListCorrectByConstruction.NonEmptyList NonEmptyString) : NonEmptyString :=
+open NonEmpty.ListCorrectByConstruction
+
+def intercalateListCBC (s : String) (xs : NonEmptyList NonEmptyString) : NonEmptyString :=
   xs.tail.foldl (fun acc x => HAppend.hAppend (HAppend.hAppend acc s) x) xs.head
