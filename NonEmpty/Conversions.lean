@@ -62,4 +62,25 @@ open NonEmpty.Aliases
 @[inline] def «NEACBC->NEL» {α} (xs : NEACBC α) : NEL α :=
   «NEA->NEL» («NEACBC->NEA» xs)
 
+@[inline] def «NEL->NELCBC» {α} (xs : NEL α) : NELCBC α :=
+  NonEmpty.ListCorrectByConstruction.NonEmptyList.fromList xs.toList xs.isNonEmpty
+
+@[inline] def «NELCBC->NEL» {α} (xs : NELCBC α) : NEL α :=
+  ⟨xs.toList, by
+    obtain ⟨h, t⟩ := xs
+    simp only [NonEmpty.ListCorrectByConstruction.NonEmptyList.toList, List.length_cons, gt_iff_lt, Nat.zero_lt_succ]
+  ⟩
+
+@[inline] def «NEA->NELCBC» {α} (xs : NEA α) : NELCBC α :=
+  «NEL->NELCBC» («NEA->NEL» xs)
+
+@[inline] def «NELCBC->NEA» {α} (xs : NELCBC α) : NEA α :=
+  «NEL->NEA» («NELCBC->NEL» xs)
+
+@[inline] def «NEACBC->NELCBC» {α} (xs : NEACBC α) : NELCBC α :=
+  «NEL->NELCBC» («NEACBC->NEL» xs)
+
+@[inline] def «NELCBC->NEACBC» {α} (xs : NELCBC α) : NEACBC α :=
+  «NEL->NEACBC» («NELCBC->NEL» xs)
+
 end NonEmpty.Conversions

@@ -1,6 +1,7 @@
 module
 public import NonEmpty.Array
 public import NonEmpty.ArrayCorrectByConstruction
+public import NonEmpty.ListCorrectByConstruction
 public import NonEmpty.List
 public import NonEmpty.String
 public import NonEmpty.StringSlice

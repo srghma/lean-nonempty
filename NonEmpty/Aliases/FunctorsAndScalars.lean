@@ -34,4 +34,10 @@ abbrev «NEACBC/NESS» := NEACBC NESS
 abbrev «NEACBC/NEST» := NEACBC NEST
 abbrev «NEACBC/NESTS» := NEACBC NESTS
 
+abbrev «NELCBC/S» := NELCBC S
+abbrev «NELCBC/NES» := NELCBC NES
+abbrev «NELCBC/NESS» := NELCBC NESS
+abbrev «NELCBC/NEST» := NELCBC NEST
+abbrev «NELCBC/NESTS» := NELCBC NESTS
+
 end NonEmpty.Aliases
