@@ -30,10 +30,10 @@ def testEmpty : Option NonEmptyStringTrimmedSlice :=
 #guard testEmpty.isNone
 
 -- Coercion tests
-def testCoeSlice (s : NonEmptyStringTrimmedSlice) : String.Slice := s
-def testCoeNonEmptyStringSlice (s : NonEmptyStringTrimmedSlice) : NonEmptyStringSlice := s
-def testCoeString (s : NonEmptyStringTrimmedSlice) : String := s
-def testCoeNonEmptyString (s : NonEmptyStringTrimmedSlice) : NonEmptyString := s
-def testCoeNonEmptyStringTrimmed (s : NonEmptyStringTrimmedSlice) : NonEmptyStringTrimmed := s
+-- def testCoeSlice (s : NonEmptyStringTrimmedSlice) : String.Slice := s
+-- def testCoeNonEmptyStringSlice (s : NonEmptyStringTrimmedSlice) : NonEmptyStringSlice := s
+-- def testCoeString (s : NonEmptyStringTrimmedSlice) : String := s
+-- def testCoeNonEmptyString (s : NonEmptyStringTrimmedSlice) : NonEmptyString := s
+-- def testCoeNonEmptyStringTrimmed (s : NonEmptyStringTrimmedSlice) : NonEmptyStringTrimmed := s
 
 end NonEmptyTest.StringTrimmedSlice

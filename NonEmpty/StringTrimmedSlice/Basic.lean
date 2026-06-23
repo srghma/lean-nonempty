@@ -17,13 +17,16 @@ namespace NonEmpty.StringTrimmedSlice
 structure NonEmptyStringTrimmedSlice extends NonEmptyStringSlice where
   hasNoWhitespaceAtStart : toSlice.startsWith Char.isWhitespace = false := by decide
   hasNoWhitespaceAtEnd : toSlice.endsWith Char.isWhitespace = false := by decide
-  deriving Hashable
+  deriving Hashable, Ord --, Repr, DecidableEq, BEq, ReflBEq, LawfulBEq
 
 instance : BEq NonEmptyStringTrimmedSlice where
   beq a b := a.toSlice == b.toSlice
 
 instance : ToString NonEmptyStringTrimmedSlice where
   toString s := s.toNonEmptyStringSlice.toString
+
+instance : ReflBEq NonEmptyStringSlice where
+  rfl {a} := ReflBEq.rfl (a := a.toSlice)
 
 @[inline]
 def toNonEmptyStringTrimmed (s : NonEmptyStringTrimmedSlice) : NonEmptyStringTrimmed :=

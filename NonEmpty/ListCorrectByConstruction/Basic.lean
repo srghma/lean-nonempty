@@ -12,7 +12,7 @@ namespace NonEmpty.ListCorrectByConstruction
 structure NonEmptyList (α : Type u) where
   head : α
   tail : List α
-  deriving Hashable, Ord, Repr, BEq, DecidableEq
+  deriving BEq, Hashable, Ord, Repr, DecidableEq, ReflBEq, LawfulBEq
 
 instance [ToString α] : ToString (NonEmptyList α) where
   toString a := "!" ++ toString ([a.head] ++ a.tail)

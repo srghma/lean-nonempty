@@ -9,7 +9,7 @@ namespace NonEmpty.Array
 structure NonEmptyArray (α : Type u) where
   toArray : Array α
   isNonEmpty : toArray.size > 0 := by decide
-  deriving Hashable, Ord, Repr, DecidableEq
+  deriving Hashable, Ord, Repr, DecidableEq --, BEq, ReflBEq, LawfulBEq (maybe in future will be supported)
 
 instance [ToString α] : ToString (NonEmptyArray α) where
   toString a := "#!" ++ toString a.toArray
@@ -17,6 +17,19 @@ instance [ToString α] : ToString (NonEmptyArray α) where
 instance [Inhabited α] : Inhabited (NonEmptyArray α) where
   default := ⟨#[default], by exact Nat.zero_lt_succ _⟩
 
+instance [BEq α] : BEq (NonEmptyArray α) where
+  beq a b := a.toArray == b.toArray
+
+instance [BEq α] [ReflBEq α] : ReflBEq (NonEmptyArray α) where
+  rfl {a} := ReflBEq.rfl (a := a.toArray)
+
+instance [BEq α] [LawfulBEq α] : LawfulBEq (NonEmptyArray α) where
+  eq_of_beq {a b} h := by
+    have h' : a.toArray = b.toArray := eq_of_beq h
+    cases a
+    cases b
+    congr
+  rfl {a} := ReflBEq.rfl (a := a.toArray)
 namespace NonEmptyArray
 
 abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=

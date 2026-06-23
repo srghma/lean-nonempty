@@ -16,16 +16,31 @@ Despite the historical name, this intentionally wraps `String.Slice`, not `Subst
 structure NonEmptyStringSlice where
   toSlice : String.Slice
   isNonEmpty : toSlice.isEmpty = false := by decide
+  deriving Hashable, Ord --, Repr, DecidableEq, BEq, ReflBEq, LawfulBEq
 
 -- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
 -- instance : CoeOut NonEmptyStringSlice String.Slice where
 --   coe s := s.toSlice
 
 instance : ToString NonEmptyStringSlice where
-  toString s := s.toSlice.copy
+  toString s := s.toSlice.toString
+
+-- instance : Repr NonEmptyStringSlice where
+--   reprPrec s p := reprPrec s.toSlice p
 
 instance : BEq NonEmptyStringSlice where
   beq a b := a.toSlice == b.toSlice
+
+instance : ReflBEq NonEmptyStringSlice where
+  rfl {a} := ReflBEq.rfl (a := a.toSlice)
+
+-- instance : LawfulBEq NonEmptyStringSlice where
+--   eq_of_beq {a b} h := by
+--     have h' : a.toSlice = b.toSlice := eq_of_beq h
+--     cases a
+--     cases b
+--     congr
+--   rfl {a} := ReflBEq.rfl (a := a.toSlice)
 
 instance : Hashable NonEmptyStringSlice where
   hash s := hash s.toSlice

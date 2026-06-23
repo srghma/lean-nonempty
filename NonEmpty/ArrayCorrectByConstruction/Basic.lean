@@ -12,7 +12,7 @@ namespace NonEmpty.ArrayCorrectByConstruction
 structure NonEmptyArray (α : Type u) where
   head : α
   tail : Array α
-  deriving Hashable, Ord, Repr, BEq, DecidableEq
+  deriving Hashable, Ord, Repr, DecidableEq, BEq, ReflBEq, LawfulBEq
 
 instance [ToString α] : ToString (NonEmptyArray α) where
   toString a := "#!" ++ toString (#[a.head] ++ a.tail)

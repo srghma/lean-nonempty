@@ -8,13 +8,27 @@ namespace NonEmpty.List
 structure NonEmptyList (α : Type u) where
   toList : List α
   isNonEmpty : toList.length > 0 := by decide
-  deriving Hashable, Ord, Repr, DecidableEq
+  deriving Hashable, Ord, Repr, DecidableEq --, BEq, ReflBEq, LawfulBEq
 
 instance [ToString α] : ToString (NonEmptyList α) where
   toString a := "!" ++ toString a.toList
 
 instance [Inhabited α] : Inhabited (NonEmptyList α) where
   default := ⟨[default], by exact Nat.zero_lt_succ _⟩
+
+instance [BEq α] : BEq (NonEmptyList α) where
+  beq a b := a.toList == b.toList
+
+instance [BEq α] [ReflBEq α] : ReflBEq (NonEmptyList α) where
+  rfl {a} := ReflBEq.rfl (a := a.toList)
+
+instance [BEq α] [LawfulBEq α] : LawfulBEq (NonEmptyList α) where
+  eq_of_beq {a b} h := by
+    have h' : a.toList = b.toList := eq_of_beq h
+    cases a
+    cases b
+    congr
+  rfl {a} := ReflBEq.rfl (a := a.toList)
 
 namespace NonEmptyList
 
