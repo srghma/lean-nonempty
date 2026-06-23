@@ -2,7 +2,6 @@ module
 
 import Lean
 import NonEmpty.List.Basic
-import Aesop
 
 open NonEmpty.List
 

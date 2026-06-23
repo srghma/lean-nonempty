@@ -3,7 +3,6 @@ module
 import Lean
 import NonEmpty.Array.Basic
 import NonEmpty.ArrayUtil
-import Aesop
 
 open NonEmpty.Array
 
