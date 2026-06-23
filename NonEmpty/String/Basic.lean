@@ -38,6 +38,27 @@ instance : HAppend NonEmptyString String NonEmptyString where
   hAppend s1 s2 := ⟨s1.toString ++ s2, by simp only [ne_eq, String.append_eq_empty_iff,
     toString_ne_empty, false_and, not_false_eq_true]⟩
 
+instance : LT NonEmptyString where
+  lt a b := a.toString < b.toString
+
+instance : LE NonEmptyString where
+  le a b := a.toString ≤ b.toString
+
+instance (a b : NonEmptyString) : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toString < b.toString))
+
+instance (a b : NonEmptyString) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toString ≤ b.toString))
+
+instance : Min NonEmptyString where
+  min a b := if a ≤ b then a else b
+
+instance : Max NonEmptyString where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m NonEmptyString Char where
+  forIn s init f := forIn s.toString init f
+
 end NonEmptyString
 
 macro "nes!" s:str : term => do
@@ -48,5 +69,14 @@ macro "nes!" s:str : term => do
     ``( (NonEmptyString.mk $s (by decide) : NonEmptyString) )
 
 #guard (nes!"world").toString == "world"
+#guard (nes!"11" < nes!"112")
+#guard if (nes!"112" < nes!"11") then true else true
+
+#guard nes!"11" ≤ nes!"112"
+#guard nes!"11" ≤ nes!"11"
+#guard nes!"112" > nes!"11"
+#guard nes!"112" ≥ nes!"11"
+#guard nes!"11" == nes!"11"
+#guard nes!"11" != nes!"12"
 
 end NonEmpty.String

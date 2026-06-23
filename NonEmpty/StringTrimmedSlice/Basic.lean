@@ -25,8 +25,29 @@ instance : BEq NonEmptyStringTrimmedSlice where
 instance : ToString NonEmptyStringTrimmedSlice where
   toString s := s.toNonEmptyStringSlice.toString
 
-instance : ReflBEq NonEmptyStringSlice where
+instance : ReflBEq NonEmptyStringTrimmedSlice where
   rfl {a} := ReflBEq.rfl (a := a.toSlice)
+
+instance : LT NonEmptyStringTrimmedSlice where
+  lt a b := a.toSlice < b.toSlice
+
+instance : LE NonEmptyStringTrimmedSlice where
+  le a b := a.toSlice ≤ b.toSlice
+
+instance (a b : NonEmptyStringTrimmedSlice) : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toSlice < b.toSlice))
+
+instance (a b : NonEmptyStringTrimmedSlice) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toSlice ≤ b.toSlice))
+
+instance : Min NonEmptyStringTrimmedSlice where
+  min a b := if a ≤ b then a else b
+
+instance : Max NonEmptyStringTrimmedSlice where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m NonEmptyStringTrimmedSlice Char where
+  forIn s init f := forIn s.toNonEmptyStringSlice init f
 
 @[inline]
 def toNonEmptyStringTrimmed (s : NonEmptyStringTrimmedSlice) : NonEmptyStringTrimmed :=

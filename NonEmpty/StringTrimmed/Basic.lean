@@ -22,6 +22,27 @@ instance : BEq NonEmptyStringTrimmed where
 instance : ToString NonEmptyStringTrimmed where
   toString s := s.toNonEmptyString.toString
 
+instance : LT NonEmptyStringTrimmed where
+  lt a b := a.toString < b.toString
+
+instance : LE NonEmptyStringTrimmed where
+  le a b := a.toString ≤ b.toString
+
+instance (a b : NonEmptyStringTrimmed) : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toString < b.toString))
+
+instance (a b : NonEmptyStringTrimmed) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toString ≤ b.toString))
+
+instance : Min NonEmptyStringTrimmed where
+  min a b := if a ≤ b then a else b
+
+instance : Max NonEmptyStringTrimmed where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m NonEmptyStringTrimmed Char where
+  forIn s init f := forIn s.toNonEmptyString init f
+
 -- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
 -- @[inline]
 -- instance : CoeOut NonEmptyStringTrimmed String where

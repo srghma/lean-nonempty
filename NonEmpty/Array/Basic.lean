@@ -30,6 +30,49 @@ instance [BEq α] [LawfulBEq α] : LawfulBEq (NonEmptyArray α) where
     cases b
     congr
   rfl {a} := ReflBEq.rfl (a := a.toArray)
+
+instance [LT (Array α)] : LT (NonEmptyArray α) where
+  lt a b := a.toArray < b.toArray
+
+instance [LE (Array α)] : LE (NonEmptyArray α) where
+  le a b := a.toArray ≤ b.toArray
+
+instance [LT (Array α)] (a b : NonEmptyArray α) [Decidable (a.toArray < b.toArray)] : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toArray < b.toArray))
+
+instance [LE (Array α)] (a b : NonEmptyArray α) [Decidable (a.toArray ≤ b.toArray)] : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toArray ≤ b.toArray))
+
+instance [LE (Array α)] [DecidableRel (@LE.le (Array α) _)] : Min (NonEmptyArray α) where
+  min a b := if a ≤ b then a else b
+
+instance [LE (Array α)] [DecidableRel (@LE.le (Array α) _)] : Max (NonEmptyArray α) where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m (NonEmptyArray α) α where
+  forIn s init f := forIn s.toArray init f
+
+instance : GetElem (NonEmptyArray α) Nat α (fun xs i => i < xs.toArray.size) where
+  getElem xs i h := xs.toArray[i]'h
+
+instance : Append (NonEmptyArray α) where
+  append a b := ⟨a.toArray ++ b.toArray, by
+    simp_all only [Array.size_append, gt_iff_lt]
+    exact Nat.add_pos_left a.isNonEmpty b.toArray.size
+  ⟩
+
+instance : HAppend (Array α) (NonEmptyArray α) (NonEmptyArray α) where
+  hAppend a b := ⟨a ++ b.toArray, by
+    simp_all only [Array.size_append, gt_iff_lt]
+    exact Nat.add_pos_right a.size b.isNonEmpty
+  ⟩
+
+instance : HAppend (NonEmptyArray α) (Array α) (NonEmptyArray α) where
+  hAppend a b := ⟨a.toArray ++ b, by
+    simp_all only [Array.size_append, gt_iff_lt]
+    exact Nat.add_pos_left a.isNonEmpty b.size
+  ⟩
+
 namespace NonEmptyArray
 
 abbrev fromArray? (xs : Array α) : Option (NonEmptyArray α) :=

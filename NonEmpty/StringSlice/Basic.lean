@@ -48,6 +48,24 @@ instance : Hashable NonEmptyStringSlice where
 instance : LT NonEmptyStringSlice where
   lt a b := a.toSlice < b.toSlice
 
+instance : LE NonEmptyStringSlice where
+  le a b := a.toSlice ≤ b.toSlice
+
+instance (a b : NonEmptyStringSlice) : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toSlice < b.toSlice))
+
+instance (a b : NonEmptyStringSlice) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toSlice ≤ b.toSlice))
+
+instance : Min NonEmptyStringSlice where
+  min a b := if a ≤ b then a else b
+
+instance : Max NonEmptyStringSlice where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m NonEmptyStringSlice Char where
+  forIn s init f := forIn s.toSlice init f
+
 instance : Ord NonEmptyStringSlice where
   compare a b := compare a.toSlice b.toSlice
 

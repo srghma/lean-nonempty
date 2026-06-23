@@ -8,7 +8,7 @@ namespace NonEmpty.List
 structure NonEmptyList (α : Type u) where
   toList : List α
   isNonEmpty : toList.length > 0 := by decide
-  deriving Hashable, Ord, Repr, DecidableEq --, BEq, ReflBEq, LawfulBEq
+  deriving Hashable, Ord, Repr, DecidableEq
 
 instance [ToString α] : ToString (NonEmptyList α) where
   toString a := "!" ++ toString a.toList
@@ -29,6 +29,48 @@ instance [BEq α] [LawfulBEq α] : LawfulBEq (NonEmptyList α) where
     cases b
     congr
   rfl {a} := ReflBEq.rfl (a := a.toList)
+
+instance [LT (List α)] : LT (NonEmptyList α) where
+  lt a b := a.toList < b.toList
+
+instance [LE (List α)] : LE (NonEmptyList α) where
+  le a b := a.toList ≤ b.toList
+
+instance [LT (List α)] (a b : NonEmptyList α) [Decidable (a.toList < b.toList)] : Decidable (a < b) :=
+  inferInstanceAs (Decidable (a.toList < b.toList))
+
+instance [LE (List α)] (a b : NonEmptyList α) [Decidable (a.toList ≤ b.toList)] : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (a.toList ≤ b.toList))
+
+instance [LE (List α)] [DecidableRel (@LE.le (List α) _)] : Min (NonEmptyList α) where
+  min a b := if a ≤ b then a else b
+
+instance [LE (List α)] [DecidableRel (@LE.le (List α) _)] : Max (NonEmptyList α) where
+  max a b := if a ≤ b then b else a
+
+instance {m : Type u → Type v} [Monad m] : ForIn m (NonEmptyList α) α where
+  forIn s init f := forIn s.toList init f
+
+instance : GetElem (NonEmptyList α) Nat α (fun xs i => i < xs.toList.length) where
+  getElem xs i h := xs.toList[i]'h
+
+instance : Append (NonEmptyList α) where
+  append a b := ⟨a.toList ++ b.toList, by
+    simp_all only [List.length_append, gt_iff_lt]
+    exact Nat.add_pos_left a.isNonEmpty b.toList.length
+  ⟩
+
+instance : HAppend (List α) (NonEmptyList α) (NonEmptyList α) where
+  hAppend a b := ⟨a ++ b.toList, by
+    simp_all only [List.length_append, gt_iff_lt]
+    exact Nat.add_pos_right a.length b.isNonEmpty
+  ⟩
+
+instance : HAppend (NonEmptyList α) (List α) (NonEmptyList α) where
+  hAppend a b := ⟨a.toList ++ b, by
+    simp_all only [List.length_append, gt_iff_lt]
+    exact Nat.add_pos_left a.isNonEmpty b.length
+  ⟩
 
 namespace NonEmptyList
 
@@ -110,9 +152,9 @@ example : NonEmptyList Nat := ![10]
 -- ============================================================
 
 /-- Automatically coerce any `NonEmptyList` to its underlying `List`. -/
-@[inline]
-instance : CoeOut (NonEmptyList α) (List α) where
-  coe xs := xs.toList
+-- @[inline]
+-- instance : CoeOut (NonEmptyList α) (List α) where
+--   coe xs := xs.toList -- TODO: will give problems with ++ ?
 
 @[inline]
 instance : NonEmpty.DowngradeMap NonEmptyList where
