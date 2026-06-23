@@ -6,7 +6,7 @@ namespace NonEmpty.String
 structure NonEmptyString where
   toString : String
   isNonEmpty : toString ≠ "" := by decide
-  deriving BEq, Hashable, Ord, Repr, DecidableEq
+  deriving BEq, Hashable, Ord, Repr, DecidableEq, ReflBEq, LawfulBEq
 
 -- TODO: if uncomment then HAppend ++ will stop working (macro called binop% which aggressively attempts to unify the operands to a single, homogeneous type before considering heterogeneous HAppend instances)
 -- instance : CoeOut NonEmptyString String where
